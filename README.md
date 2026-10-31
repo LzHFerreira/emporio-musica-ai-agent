@@ -8,11 +8,7 @@ Developed for the **Artefact AI Engineer Technical Challenge**.
 
 ## Overview
 
-Empório da Música's customer service team is overloaded with recurring questions about products, prices, availability, orders, and store policies.
-
-The goal is to prototype an LLM-based assistant that can answer these questions using the store's operational data and policies, while handling uncertainty and respecting information-access boundaries.
-
-The challenge prioritizes engineering reasoning, technical decisions, and a functional demonstration over production-scale complexity.
+The prototype addresses recurring questions about products, prices, availability, orders and store policies using operational data while handling uncertainty and access boundaries. The challenge prioritizes engineering reasoning and a functional demonstration over production-scale complexity.
 
 ## Scope
 
@@ -44,16 +40,6 @@ Python is the only technology mandated by the challenge. Other choices will be j
 | Customer verification | Simulated SMS OTP workflow for customer-specific order access |
 | Conversation persistence | To be determined |
 
-### Engineering principles
-
-- **Requirements first:** Identify the problem, constraints, and acceptance criteria before selecting implementation mechanisms.
-- **Deterministic where possible:** Use application logic for authorization, validation, and structured operations.
-- **Explicit trust boundaries:** Model outputs and retrieved content must not override application permissions.
-- **Data minimization:** Expose only the information necessary for each operation.
-- **Evidence-driven validation:** Tests and observations support correctness claims within their coverage and limitations.
-- **Proportional complexity:** Introduce dependencies and abstractions only when their benefits justify their costs.
-- **Human-owned decisions:** Coding assistants may execute tasks and challenge assumptions, but engineering decisions and acceptance remain the author's responsibility.
-
 ## Data sources
 
 The challenge provides:
@@ -84,17 +70,11 @@ Follow [actor and access](docs/requirements.md#actors-and-access) and [data mini
 
 The prototype makes no production-grade privacy or security assurance claim.
 
-### Data freshness
-
-The datasets are snapshots; never present prices, stock, promotions or order statuses as independently verified real-time information.
-
 ## Documentation
 
 - [Requirements](docs/requirements.md) — Functional requirements, assumptions, constraints, and acceptance criteria.
 
 Architecture, technical decisions, and evaluation evidence will be documented as they become concrete.
-
-The challenge brief remains the authoritative source for the original assignment. Project-specific interpretations and decisions are maintained separately.
 
 ## Development roadmap
 
@@ -152,10 +132,6 @@ The final submission will include:
 - Documentation of coding-assistant usage.
 
 The repository will remain unchanged after the submission deadline specified by Artefact.
-
----
-
-**Current phase:** Requirements analysis and solution design
 
 ## Architecture decisions
 

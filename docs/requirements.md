@@ -40,11 +40,7 @@ The assistant supports:
 
 ### Proposed extensions
 
-The following remain proposed, consistent with the README:
-
-- A protected contributor interface for internal procedures and exact stock quantities.
-
-Contributor requirements below define intended behavior if that optional project extension is included. This project baseline does not represent it as a mandatory challenge requirement.
+A protected contributor interface for internal procedures and exact stock quantities remains an optional project extension. Its requirements below apply only if selected; it is not a challenge baseline requirement.
 
 Real SMS delivery, production identity verification, account recovery, purchases, order changes, and stock or price updates are outside the prototype scope.
 
