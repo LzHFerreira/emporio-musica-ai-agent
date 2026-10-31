@@ -25,7 +25,7 @@ The agent is expected to:
 - Handle missing, ambiguous, conflicting, and out-of-scope information.
 - Respect authorization boundaries when accessing customer-specific information.
 
-Additional scenarios under consideration include a protected contributor interface, simulated customer verification, and adversarial access-control tests.
+A protected contributor interface remains under consideration; simulated SMS verification is required for customer-specific order access.
 
 ## Technical approach
 
@@ -39,9 +39,9 @@ Python is the only technology mandated by the challenge. Other choices will be j
 | Authorization | Application-enforced permissions and resource ownership |
 | Agent architecture | Under evaluation |
 | LLM and provider | Under evaluation |
-| Structured data access | Under evaluation |
+| Structured data access | SQLite via Django ORM ([ADR-0001](docs/adr/0001-use-sqlite-for-structured-data.md)) |
 | Policy retrieval | Under evaluation |
-| Customer verification | Proposed simulated SMS OTP workflow |
+| Customer verification | Simulated SMS OTP workflow for customer-specific order access |
 | Conversation persistence | To be determined |
 
 ### Engineering principles
@@ -80,22 +80,13 @@ This is a documented project assumption, not an independently verified classific
 
 ### Data handling
 
-Although the challenge data is treated as synthetic, the application is designed around security boundaries that would also matter in a real-world environment.
-
-- Authentication and authorization are enforced by the application, not by the LLM.
-- Customer-specific operations require appropriate verification and resource ownership checks.
-- Tools expose only the information necessary to fulfill an authorized request.
-- Retrieved documents and user inputs cannot override application permissions.
-- Credentials and secrets must never be committed to the repository.
-- Real production data would require separate classification, authorization, and appropriate privacy controls before use with coding assistants or external model providers.
+Follow [actor and access](docs/requirements.md#actors-and-access) and [data minimization](docs/requirements.md#data-minimization) requirements for authentication, verification, ownership, tool exposure and instruction boundaries. Never commit credentials or secrets; classify and authorize production data before sharing it with coding assistants or external model providers.
 
 The prototype does not claim production-grade privacy or security assurance.
 
 ### Data freshness
 
-The supplied datasets represent snapshots.
-
-Product prices, stock availability, promotions, and order statuses must not be represented as independently verified real-time information.
+The datasets are snapshots; never present prices, stock, promotions or order statuses as independently verified real-time information.
 
 ## Documentation
 
@@ -108,7 +99,7 @@ The challenge brief remains the authoritative source for the original assignment
 ## Development roadmap
 
 1. Complete initial requirements analysis and document assumptions.
-2. Select and justify the agent architecture, model, and data-access mechanisms.
+2. Select and justify the agent architecture, model, and provider.
 3. Implement a minimal working customer interaction.
 4. Integrate structured data lookups and policy retrieval.
 5. Implement necessary authorization and verification controls.
@@ -125,53 +116,13 @@ Python version, environment setup, configuration, execution commands, and test i
 
 ## Testing and evaluation
 
-Testing will cover:
-
-- Functional correctness and grounded responses.
-- Appropriate tool selection and retrieval.
-- Handling of missing or conflicting information.
-- Authorization and resource ownership enforcement.
-- Failure handling and out-of-scope requests.
-- Prompt-injection and adversarial access attempts.
-
-Actual test results and reproducible execution commands will be added as implementation progresses.
-
-**No behavioral validation has been completed yet.**
+Required coverage is defined in [requirements](docs/requirements.md#acceptance-coverage-and-traceability). No behavioral validation has been completed.
 
 ## AI-assisted development
 
 OpenAI Codex (**Luna 6, low reasoning effort**) supports the development workflow primarily through **mechanical execution and adversarial analysis**.
 
-The workflow separates engineering authority from delegated work.
-
-### Engineer responsibilities
-
-The project author retains ownership of:
-
-- Problem formulation and requirements interpretation.
-- Architectural decisions and technical trade-offs.
-- System boundaries, interfaces, and invariants.
-- Assumptions, risks, and acceptance criteria.
-- Evaluation and acceptance of implementation changes.
-- Final responsibility for correctness, security, and deliverable quality.
-
-### Codex responsibilities
-
-**Mechanical execution**
-
-- Documentation and repetitive implementation work.
-- Repository and dataset inspection.
-- Execution of tests, linters, and static analyzers.
-- Collection and organization of verification evidence.
-- Consistency checks across code, tests, and documentation.
-
-**Adversarial analysis**
-
-- Searching for contradictions and incomplete requirements.
-- Challenging engineering assumptions.
-- Identifying failure modes and edge cases.
-- Searching for authorization bypasses and security weaknesses.
-- Proposing counterexamples and identifying missing tests.
+The project author owns requirements, architecture, system boundaries, assumptions, acceptance, and final responsibility for quality.
 
 Codex may reason about delegated problems and propose alternatives, but its conclusions do not independently establish correctness or authorize engineering decisions.
 
@@ -179,17 +130,13 @@ Codex may reason about delegated problems and propose alternatives, but its conc
 
 Codex assisted with initial documentation, requirements organization, order-verification alternatives, and inspection of the supplied challenge datasets.
 
-The project author selected Django, the intended authentication and authorization approach, the interaction scenarios, and the proposed simulated SMS verification workflow.
-
-The inspected datasets are treated as synthetic under the project's documented challenge assumption.
+The project author selected Django, the intended authentication and authorization approach, the interaction scenarios, and simulated SMS verification for customer-specific order access.
 
 ### Verification and accountability
 
 Generated output is subject to engineering review.
 
 Adversarial findings are treated as hypotheses requiring investigation. Tests and deterministic tools provide evidence within their respective coverage and assumptions.
-
-**The engineer defines what must be true and why. Codex assists with execution and searches for counterexamples. Tools provide evidence. The engineer evaluates that evidence and makes the final decisions.**
 
 This section will be updated to reflect actual implementation contributions and verification practices.
 
@@ -208,6 +155,8 @@ The repository will remain unchanged after the submission deadline specified by 
 
 ---
 
-**Project:** Artefact AI Engineer Technical Challenge  
-**Primary language:** Python  
 **Current phase:** Requirements analysis and solution design
+
+## Architecture decisions
+
+- [ADR-0001: Use SQLite for structured operational data](docs/adr/0001-use-sqlite-for-structured-data.md)
