@@ -6,15 +6,15 @@ Status: proposed design, pending review. No implementation or validation is clai
 
 Use SQLite for CSV snapshots, Django ORM models and read-only services, as accepted in [ADR-0001](adr/0001-use-sqlite-for-structured-data.md). Policy lookup uses curated, classified sections; the model receives bounded, permitted results, never database, SQL, filesystem or full-manual access.
 
-This design fits Django and the supplied dataset; vector databases, embeddings and agent frameworks are not prerequisites. Revisit policy search if measured coverage shows section lookup is insufficient.
+No vector database, embeddings or agent framework is required for this design. Revisit policy search if measured section coverage is insufficient.
 
 ## Source preparation
 
-Import synthetic fixtures with a repeatable management command. Parse headers explicitly; validate required IDs, uniqueness, foreign keys, dates, nonnegative prices and stock, promotion percentages and flags, and specification JSON. Use Decimal for money and explicit order-date formats, never locale inference. Preserve source IDs and snapshot provenance.
+Import synthetic fixtures with a repeatable management command. Parse headers explicitly; validate required IDs, uniqueness, foreign keys, dates, nonnegative prices/stock, promotion percentages/flags and specification JSON. Use Decimal for money and explicit order-date formats, not locale inference. Preserve source IDs and snapshot provenance.
 
 Report invalid records and fail the import transaction rather than silently skipping them or publishing partial data. Re-importing an unchanged fixture must not duplicate records. Imports are an administrative operation, unavailable to conversational tools. Document any normalization separately from source corrections.
 
-Model relationships mirror the source: product to category, promotion to product, order to customer, and order item to order and product. Validate the order-item identity strategy during import; do not assume an undocumented composite key. Do not reconstruct historical totals from present catalog prices: order items contain no historical unit price.
+Link products to categories, promotions to products, orders to customers, and items to orders and products. Validate order-item identity at import; do not assume an undocumented composite key or reconstruct historical totals from current prices, since no historical unit price is supplied.
 
 ## Access contracts
 
@@ -34,21 +34,21 @@ The server derives access context from the Django request and server-side verifi
 
 Permission labels such as `view_exact_stock` and `view_internal_policy` are proposed logical capabilities; final Django permission names and assignment remain to be defined. Contributor authentication alone does not grant customer-order access.
 
-Return structured outcomes such as found, not found, ambiguous, unavailable or denied. Where an outcome could reveal customer/order existence, map it to the same public failure response. Public projections must be explicit allowlists, not serialized full model instances. Bound result counts and input lengths; select final limits before implementation.
+Return structured outcomes (found, not found, ambiguous, unavailable, denied); map existence-revealing outcomes to one public failure response. Use explicit public-field allowlists, never full model serialization. Bound results and input lengths; set limits before implementation.
 
 ## Catalog and recommendations
 
 Filter in the database, including budget. Clarify ambiguous names or return bounded candidates. Derive availability from validated stock and status; clarify unknown or contradictory status rules before implementation. Hide exact stock in public projections.
 
-The model may explain and compare returned candidates using their recorded attributes. It cannot invent specifications or override filters. Initially apply budget to recorded base price; eligibility based on promotional price requires an unambiguous applicable promotion and an explicit extension of the search contract.
+The model may explain candidates using recorded attributes, but cannot invent specifications or override filters. Apply budgets to base prices; use promotional prices only with a unique applicable offer and an explicit search-contract extension.
 
 Promotion arithmetic uses Decimal and the requirements' half-up rounding. Do not stack promotions or apply the 5% PIX discount to promotional prices ([policy manual §6.2, p. 6](../data/políticas_da_loja.pdf#page=6)). Multiple applicable promotions remain ambiguous until precedence is established. An active flag is a snapshot fact, not a date-based validity check.
 
 ## Policy access
 
-Create reviewed policy records with section/page locator, text, topic, audience and any conflict marker. The initial public allowlist covers customer-facing facts about contacts, hours, payment, exchanges/returns, deliveries, promotions and warranty; only reviewed passages are included. Internal workflow passages remain restricted or unclassified. Unclassified material is excluded from public lookup.
+Store reviewed policy passages with page/section, topic, audience and conflict marker. Public lookup initially allows reviewed customer-facing contact, hours, payment, exchange/return, delivery, promotion and warranty passages; internal workflows and unclassified text are excluded.
 
-Start with topic mapping and text search over the permitted sections. Filter by audience before ranking or sending results to the model. Preserve conflicting passages together with a conflict marker; do not silently select a preferred interpretation. Record the manual version with results. Instructions inside retrieved text remain untrusted content.
+Start with topic mapping and text search; filter by audience before ranking or model delivery. Keep conflicting passages with conflict markers; never choose silently, and return the manual version. Treat retrieved instructions as untrusted.
 
 ## Order verification boundary
 
@@ -60,7 +60,7 @@ Scope the order query to the server-verified customer and requested order ID in 
 
 ## Boundaries and provenance
 
-Each permitted result includes source type, record identifier or policy locator, and a snapshot marker. Distinguish source capture time, if known, from import time; importing today does not make the data current. Logs contain operation names and safe outcome codes, excluding raw messages, codes, customer records and sensitive tool arguments by default.
+Return source type, record ID or policy locator, and snapshot marker. Distinguish known capture time from import time; import does not make data current. By default, logs include operation and safe outcome only, excluding raw messages, codes, customer records and sensitive tool arguments.
 
 Model-facing tools call these services and receive only their permitted projections. Application checks apply before retrieval and before disclosure; prompts provide an additional behavioral instruction rather than the authorization mechanism. No operational write tools are included.
 

@@ -80,9 +80,9 @@ This is a documented project assumption, not an independently verified classific
 
 ### Data handling
 
-Follow [actor and access](docs/requirements.md#actors-and-access) and [data minimization](docs/requirements.md#data-minimization) requirements for authentication, verification, ownership, tool exposure and instruction boundaries. Never commit credentials or secrets; classify and authorize production data before sharing it with coding assistants or external model providers.
+Follow [actor and access](docs/requirements.md#actors-and-access) and [data minimization](docs/requirements.md#data-minimization) for authentication, verification, ownership, tool exposure and instruction boundaries. Never commit credentials or secrets. Classify and authorize production data before sharing it with coding assistants or model providers.
 
-The prototype does not claim production-grade privacy or security assurance.
+The prototype makes no production-grade privacy or security assurance claim.
 
 ### Data freshness
 

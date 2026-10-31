@@ -77,19 +77,19 @@ Challenge and policy claims require exact page, section or field references befo
 
 | ID | Requirement | Acceptance criterion | Origin |
 | --- | --- | --- | --- |
-| FR-01 | Receive and respond to text messages using the store persona. | Respond in Portuguese with a friendly, informal and professional tone appropriate to the request. | Challenge; Project |
-| FR-02 | Answer contact and opening-hours questions from the policy. | Report recorded opening hours accurately. Acknowledge conflicting contact details instead of silently choosing one. | Challenge; Policy |
-| FR-03 | Recommend instruments using customer needs and recorded product attributes. | Ask for missing preferences when needed. Recommendations respect the stated budget and explain their supporting attributes. Do not invent specifications. | README; Project |
-| FR-04 | Report recorded product prices and availability. | Use the matching source record. Do not present zero stock as available. Suggest available alternatives only when supported by the data. Public responses do not disclose exact stock quantities under the proposed access policy. | Challenge; Data; Project |
-| FR-05 | Report promotions within snapshot limits. | Exclude inactive offers; describe active records as recorded in the snapshot, without claiming current validity. For an unambiguous applicable offer, show recorded base price, discount percentage and calculated promotional price. | Challenge; Data; Project |
-| FR-06 | Answer customer-facing policy questions. | Include applicable conditions and deadlines. Ask for missing facts and acknowledge material conflicts. Do not disclose internal-only procedures. | Challenge; Policy; Project |
-| FR-07 | Provide a protected contributor interface, if selected. | Anonymous users cannot access it. Authenticated users receive only information allowed by their permissions. Tests cover internal procedures and exact stock quantities. | Proposed project extension |
-| FR-08 | Handle out-of-scope requests. | Politely explain scope. Per [policy §1, p. 2](../data/políticas_da_loja.pdf#page=2), accessories are not sold; redirect per [§7.1, p. 6](../data/políticas_da_loja.pdf#page=6), suggesting partner stores only when sources support it. | Challenge; Policy |
-| FR-09 | Resist instruction and access-control bypass attempts. | Conversational role claims and instructions embedded in messages, CSV fields or retrieved documents do not change permissions or expose protected information. Legitimate permitted requests remain answerable. | README; Project |
-| FR-10 | Handle missing, ambiguous or conflicting information. | Ask for clarification when necessary. State when sources do not establish an answer. Do not invent store-specific facts. | README; Project |
-| FR-11 | Minimize customer-related information exposure. | Return only fields needed for an authorized operation. Exclude unnecessary names, phone numbers, email addresses and unrelated order details from model inputs, responses and logs. | README; Project |
-| FR-12 | Provide public customer interaction. | An anonymous user can ask permitted questions without signing in. Claimed contributor status does not expand access. | Project |
-| FR-13 | Restrict customer-specific order-status access through simulated verification. | Establish the verification context, check order ownership server-side and return only permitted order information. Failed, unavailable or ambiguous verification discloses no order details. | README; Project |
+| FR-01 | Respond as the store persona. | Use friendly, informal, professional Portuguese appropriate to the request. | Challenge; Project |
+| FR-02 | Answer contact and opening-hours questions from policy. | Report recorded hours accurately; acknowledge conflicting contact details rather than choosing one silently. | Challenge; Policy |
+| FR-03 | Recommend instruments from customer needs and recorded attributes. | Ask for needed preferences; respect the budget, explain supporting attributes and do not invent specifications. | README; Project |
+| FR-04 | Report product prices and availability from matching records. | Do not call zero stock available; suggest available alternatives only when supported by the data. Under the proposed access policy, public responses omit exact quantities. | Challenge; Data; Project |
+| FR-05 | Report promotions within snapshot limits. | Exclude inactive offers; describe active flags as snapshot records, not proof of current validity. For a unique applicable offer, show recorded base price, discount percentage and calculated price. | Challenge; Data; Project |
+| FR-06 | Answer customer-facing policy questions. | Give applicable conditions and deadlines; ask for missing facts, acknowledge material conflicts and withhold internal procedures. | Challenge; Policy; Project |
+| FR-07 | Provide a protected contributor interface only if selected. | Deny anonymous users; limit authenticated users to permitted information. Test internal procedures and exact stock quantities. | Proposed project extension |
+| FR-08 | Handle out-of-scope requests. | Politely redirect accessory requests: per [policy §1, p. 2](../data/políticas_da_loja.pdf#page=2), accessories are not sold; per [§7.1, p. 6](../data/políticas_da_loja.pdf#page=6), suggest partner stores only when sources support it. Explain other out-of-scope requests politely. | Challenge; Policy |
+| FR-09 | Resist instruction and access-control bypass. | Role claims or instructions in messages, CSV fields or retrieved documents cannot change permissions or expose protected data; legitimate permitted requests remain answerable. | README; Project |
+| FR-10 | Handle missing, ambiguous or conflicting information. | Clarify when needed, state when sources are inconclusive and never invent store-specific facts. | README; Project |
+| FR-11 | Minimize customer information exposure. | Return only fields required for an authorized operation; omit unnecessary names, phone numbers, emails and unrelated order details from model inputs, responses and logs. | README; Project |
+| FR-12 | Allow public customer interaction. | Anonymous users may ask permitted questions; claimed contributor status grants no added access. | Project |
+| FR-13 | Restrict order-status access through simulated verification. | Establish a verification context, check order ownership server-side and return permitted fields only. Failed, unavailable or ambiguous verification reveals no order details. | README; Project |
 
 ### Promotion rules
 

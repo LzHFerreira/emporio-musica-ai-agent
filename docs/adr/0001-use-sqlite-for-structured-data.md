@@ -11,11 +11,11 @@ The Django prototype uses small related CSV snapshots and needs relational queri
 
 Use SQLite as the application SQL database, accessed through Django models and the Django ORM.
 
-Keep synthetic CSVs as versioned fixtures; a management command validates and imports selected datasets transactionally and repeatably, without duplicating unchanged records, preserving source IDs and snapshot provenance.
+Keep synthetic CSVs as versioned fixtures. A management command transactionally validates and repeatably imports selected data, preserving source IDs and snapshot provenance without duplicating unchanged records.
 
 Generate the database locally through migrations and the import command; do not commit the database file or SQLite sidecar files. Document the exact setup commands when implemented.
 
-Expose read-only application services that enforce permissions, customer ownership and explicit permitted-field projections before returning information to the assistant. The model will not generate or execute arbitrary SQL. Use Django Admin for authorized, read-only inspection if a management interface is included.
+Expose read-only services that enforce permissions, customer ownership and field allowlists before returning data. Do not let the model generate or execute arbitrary SQL. If included, Django Admin is authorized for read-only inspection.
 
 ## Alternatives considered
 
