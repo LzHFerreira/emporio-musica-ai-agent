@@ -4,13 +4,13 @@ Status: proposed design, pending review. No implementation or validation is clai
 
 ## Decision
 
-Use SQLite for CSV snapshots, Django ORM models and read-only services, as accepted in [ADR-0001](adr/0001-use-sqlite-for-structured-data.md). Policy lookup uses curated, classified sections; the model receives bounded, permitted results, never database, SQL, filesystem or full-manual access.
+Use SQLite as a derived query store for canonical project CSVs, with Django ORM models and read-only conversational services, as accepted in [ADR-0001](adr/0001-use-sqlite-for-structured-data.md). The CSVs remain authoritative; database imports must not silently supersede or diverge from them. Policy lookup uses curated, classified sections; the model receives bounded, permitted results, never database, SQL, filesystem or full-manual access.
 
 No vector database, embeddings or agent framework is required for this design. Revisit policy search if measured section coverage is insufficient.
 
 ## Source preparation
 
-Import synthetic fixtures with a repeatable management command. Parse headers explicitly; validate required IDs, uniqueness, foreign keys, dates, nonnegative prices/stock, promotion percentages/flags and specification JSON. Use Decimal for money and explicit order-date formats, not locale inference. Preserve source IDs and snapshot provenance.
+Import canonical project CSVs with a repeatable management command. Parse headers explicitly; validate required IDs, uniqueness, foreign keys, dates, nonnegative prices/stock, promotion percentages/flags and specification JSON. Use Decimal for money and explicit order-date formats, not locale inference. Preserve source IDs and source-file provenance. A future BU-facing interface, if time permits, must update the canonical source data through a validated workflow; it must not create database-only business facts.
 
 Report invalid records and fail the import transaction rather than silently skipping them or publishing partial data. Re-importing an unchanged fixture must not duplicate records. Imports are an administrative operation, unavailable to conversational tools. Document any normalization separately from source corrections.
 
@@ -40,7 +40,7 @@ Return structured outcomes (found, not found, ambiguous, unavailable, denied); m
 
 Filter in the database, including budget. Clarify ambiguous names or return bounded candidates. Derive availability from validated stock and status; clarify unknown or contradictory status rules before implementation. Hide exact stock in public projections.
 
-The model may explain candidates using recorded attributes, but cannot invent specifications or override filters. Apply budgets to base prices; use promotional prices only with a unique applicable offer and an explicit search-contract extension.
+The model may explain candidates using recorded attributes, but cannot invent specifications or override filters. A budget means the maximum supported payable price. For each product, use the calculated price from a unique applicable snapshot-active promotion when available; otherwise use the recorded base price. Filter on that amount before ranking and report which price was compared. If multiple promotions make the payable price ambiguous, do not claim the product meets the budget; report the ambiguity or use the base price only when clearly labeled as such.
 
 Promotion arithmetic uses Decimal and the requirements' half-up rounding. Do not stack promotions or apply the 5% PIX discount to promotional prices ([policy manual §6.2, p. 6](../data/políticas_da_loja.pdf#page=6)). Multiple applicable promotions remain ambiguous until precedence is established. An active flag is a snapshot fact, not a date-based validity check.
 
@@ -60,7 +60,7 @@ Scope the order query to the server-verified customer and requested order ID in 
 
 ## Boundaries and provenance
 
-Return source type, record ID or policy locator, and snapshot marker. Distinguish known capture time from import time; import does not make data current. By default, logs include operation and safe outcome only, excluding raw messages, codes, customer records and sensitive tool arguments.
+Return source type, record ID or policy locator, and source version or modification marker where available. Distinguish source update time from import time so users and operators can identify which canonical version backs an answer. By default, logs include operation and safe outcome only, excluding raw messages, codes, customer records and sensitive tool arguments.
 
 Model-facing tools call these services and receive only their permitted projections. Application checks apply before retrieval and before disclosure; prompts provide an additional behavioral instruction rather than the authorization mechanism. No operational write tools are included.
 
@@ -74,5 +74,5 @@ Trace tests to FR-03–FR-13 and NFR-01–NFR-06 as applicable. Cover transactio
 - Review policy passage classification and exact source locators.
 - Confirm source status vocabulary, promotion applicability and any normalization rules.
 - Set query bounds, verification lifetimes and rate limits.
-- Choose import update/replacement semantics and handling of records removed from later snapshots.
+- Define validated source-update and import/reconciliation semantics, including handling of records removed from canonical CSVs; assign BU ownership of source maintenance for any real-world deployment.
 - Select the user-interface and model integration separately from these service contracts.

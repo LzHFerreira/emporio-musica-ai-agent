@@ -5,13 +5,13 @@
 
 ## Context
 
-The Django prototype uses small related CSV snapshots and needs relational queries with application-enforced access to restricted fields and orders. It has no demonstrated need for a separate database server or concurrent writes.
+The Django prototype uses small related CSV datasets as its canonical project sources and needs relational queries with application-enforced access to restricted fields and orders. SQLite is a derived query store, not an independent business-data authority. There is no demonstrated need for a separate database server or concurrent writes.
 
 ## Decision
 
 Use SQLite as the application SQL database, accessed through Django models and the Django ORM.
 
-Keep synthetic CSVs as versioned fixtures. A management command transactionally validates and repeatably imports selected data, preserving source IDs and snapshot provenance without duplicating unchanged records.
+Keep CSVs as versioned canonical project sources. A management command transactionally validates and repeatably imports selected data into SQLite, preserving source IDs and source-file provenance without duplicating unchanged records. In a real-world scenario, the responsible BU owns updating the canonical data. A BU-facing maintenance interface may be implemented if time permits; any such interface must update the canonical source through validation rather than introduce database-only facts.
 
 Generate the database locally through migrations and the import command; do not commit the database file or SQLite sidecar files. Document the exact setup commands when implemented.
 
@@ -27,7 +27,7 @@ Expose read-only services that enforce permissions, customer ownership and field
 
 ## Consequences
 
-Setup requires schema migrations and fixture import. Import validation and source-update semantics need implementation and tests. SQLite remains a snapshot-backed store; importing records does not make prices, stock, promotions or order statuses live.
+Setup requires schema migrations and canonical-source import. Import validation, source-update and reconciliation semantics need implementation and tests. SQLite remains a derived store; answers reflect the canonical source version imported into it. The prototype does not claim live synchronization with external operational systems.
 
 Django models do not themselves establish authorization or prevent sensitive disclosure. Application services must enforce those boundaries independently of model instructions.
 

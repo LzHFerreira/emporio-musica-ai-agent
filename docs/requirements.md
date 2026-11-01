@@ -18,11 +18,11 @@ All supplied datasets are treated as synthetic fixtures under the [documented as
 
 Synthetic fixtures do not remove the need to demonstrate application authorization, resource ownership and data minimization. Credentials and real production data remain outside this assumption.
 
-### Snapshot semantics
+### Canonical data and freshness
 
-The supplied CSV files are static snapshots.
+For this project, the supplied CSV files are the canonical sources for product, category, customer, order, order-item, and promotion data. The application database is a derived query store populated from those files; it must not become an independent authority. In a real-world scenario, the responsible business unit (BU) owns keeping the canonical CSVs current. If time permits, the project may engineer a BU-facing interface to review and update this information; otherwise updates remain outside the prototype workflow.
 
-Prices, stock, promotion flags and order statuses must be described as recorded information, without claiming live synchronization or independently verified present-day validity.
+Answers must reflect the canonical project sources and may describe their values as current for the project data version in use. The prototype does not claim live synchronization with external operational systems. A promotion's active flag is authoritative for the project data version; no date-based validity is implied because the source contains no validity dates.
 
 ## Scope and scenarios
 
@@ -42,7 +42,7 @@ The assistant supports:
 
 A protected contributor interface for internal procedures and exact stock quantities remains an optional project extension. Its requirements below apply only if selected; it is not a challenge baseline requirement.
 
-Real SMS delivery, production identity verification, account recovery, purchases, order changes, and stock or price updates are outside the prototype scope.
+Real SMS delivery, production identity verification, account recovery, purchases, order changes, and direct conversational writes to stock or price are outside the prototype scope. A BU-facing source-maintenance interface is a possible time-permitting extension.
 
 ## Actors and access
 
@@ -75,7 +75,7 @@ Challenge and policy claims require exact page, section or field references befo
 | --- | --- | --- | --- |
 | FR-01 | Respond as the store persona. | Use friendly, informal, professional Portuguese appropriate to the request. | Challenge; Project |
 | FR-02 | Answer contact and opening-hours questions from policy. | Report recorded hours accurately; acknowledge conflicting contact details rather than choosing one silently. | Challenge; Policy |
-| FR-03 | Recommend instruments from customer needs and recorded attributes. | Ask for needed preferences; respect the budget, explain supporting attributes and do not invent specifications. | README; Project |
+| FR-03 | Recommend instruments from customer needs and recorded attributes. | Ask for needed preferences; respect the budget using the supported payable price (unique applicable snapshot-active promotional price, otherwise recorded base price), identify the price used, explain supporting attributes and do not invent specifications. | README; Project |
 | FR-04 | Report product prices and availability from matching records. | Do not call zero stock available; suggest available alternatives only when supported by the data. Under the proposed access policy, public responses omit exact quantities. | Challenge; Data; Project |
 | FR-05 | Report promotions within snapshot limits. | Exclude inactive offers; describe active flags as snapshot records, not proof of current validity. For a unique applicable offer, show recorded base price, discount percentage and calculated price. | Challenge; Data; Project |
 | FR-06 | Answer customer-facing policy questions. | Give applicable conditions and deadlines; ask for missing facts, acknowledge material conflicts and withhold internal procedures. | Challenge; Policy; Project |
@@ -94,6 +94,7 @@ For FR-05:
 - Interpret `active` as a snapshot attribute, not proof of current validity.
 - Calculate the promotional price as base price × (1 − discount percentage / 100), using decimal arithmetic and rounding half-up to two decimal places.
 - Do not invent precedence rules for multiple promotions.
+- For FR-03 budget filtering, treat a unique applicable snapshot-active promotional price as the supported payable price; when none exists, use the recorded base price. Apply the same amount in database filtering and the explanation. Do not claim an ambiguous promotion makes a product fit the budget.
 - Do not stack promotions or apply the 5% PIX discount to promotional prices ([policy manual §6.2, p. 6](../data/políticas_da_loja.pdf#page=6)).
 - If multiple records or conflicting rules prevent a unique calculation, report the ambiguity.
 
@@ -143,7 +144,7 @@ Failed or unavailable verification receives a generic failure response and a sto
 | NFR-01 | Ground store-specific factual answers in supplied sources. | Compare representative answers with identified source records or policy sections, including missing and conflicting cases. |
 | NFR-02 | Enforce authorization independently of the conversation. | Test application and tool access directly, including anonymous users, insufficient permissions, impersonation and cross-customer requests where applicable. |
 | NFR-03 | Minimize data crossing system boundaries. | Inspect model requests, responses and logs against the permitted-field definitions. Verify that verification codes and unnecessary customer fields are absent. |
-| NFR-04 | Represent freshness honestly. | Stock, price, promotion and order answers do not claim live or independently confirmed current information. |
+| NFR-04 | Represent data version clearly. | Treat project CSVs as canonical; answers reflect the imported canonical version and identify its update/import time where available. Do not claim live synchronization with external operational systems. |
 | NFR-05 | Make the project reproducible and reviewable. | A reviewer can configure and run the completed application and tests using documented dependencies, fixtures and environment settings. |
 | NFR-06 | Restrict internal policy disclosure. | Public retrieval and response paths expose only classified customer-facing policy information. Test internal-content requests and prompt-injection attempts. |
 | NFR-07 | Preserve public-repository boundaries. | Review tracked files and history for credentials, real production records and unintended sensitive logs or examples. Synthetic challenge fixtures remain governed by the documented working assumption. |
@@ -174,14 +175,14 @@ Each test or evaluation case must reference the requirement IDs it checks and id
 | Coverage | Minimum cases |
 | --- | --- |
 | Persona and contact — FR-01, FR-02 | Portuguese response; recorded hours; conflicting contact details. |
-| Recommendations and products — FR-03, FR-04 | Suitable recommendation; missing preferences; budget constraint; unavailable product; ambiguous product name. |
+| Recommendations and products — FR-03, FR-04 | Suitable recommendation; missing preferences; base-price budget constraint; snapshot-active promotional price within budget despite base price exceeding it; unavailable product; ambiguous product name. Explanations identify the amount used for budget filtering. |
 | Promotions — FR-05 | Inactive flag; snapshot-active flag; decimal calculation and rounding; conflicting promotions; no promotion stacking or PIX discount on promotional prices. Preserve ambiguity when multiple promotions apply. |
 | Policies — FR-06, NFR-06 | Supported rule; missing facts; conflicting deadlines; exactly R$500 delivery boundary; attempted internal-procedure disclosure. |
 | Public and contributor access — FR-07, FR-12, NFR-02 | Anonymous public access; contributor-interface denial; permitted contributor; authenticated user without permission. Contributor cases apply only if selected. |
 | Scope and uncertainty — FR-08, FR-10 | Unrelated request; accessory request handled per policy; absent information; conflicting sources. |
 | Adversarial behavior — FR-09 | Role impersonation; instruction override; malicious retrieved content; legitimate request following a rejected attack. |
 | Data boundaries — FR-11, NFR-03 | Permitted fields only in model inputs, responses and logs; no verification codes in those channels. |
-| Freshness — NFR-04 | No live-data claims for prices, stock, promotions or order statuses. |
+| Data version — NFR-04 | Answers reflect canonical CSV values; source/import timing is identified where available; no claim of live synchronization with external operational systems. |
 | Order verification — FR-13 | Successful verification; different verified customer; invalid, expired and reused codes; issuance and attempt limits; session binding and expiry; failed or unavailable verification; ambiguous match; missing tracking data; non-enumerating failures. |
 | Reproducibility — NFR-05 | Clean setup using the completed README and documented fixtures. |
 
