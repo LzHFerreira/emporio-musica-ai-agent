@@ -24,8 +24,8 @@ The server derives access context from the Django request and server-side verifi
 
 | Operation | Inputs | Permitted result | Gate |
 | --- | --- | --- | --- |
-| Search catalog | Text, category, maximum price, availability filter, bounded page | Product ID, name, description, selected specifications, category, recorded price and availability | Public |
-| Product details | Product ID | Same public fields and applicable promotion result | Public |
+| Search catalog | Text, category, maximum price, optional requested payment method, availability filter, bounded page | Product ID, name, description, selected specifications, category, recorded base price, supported payable price, payment condition, pricing source locators and availability | Public |
+| Product details | Product ID, optional requested payment method | Same public fields and applicable promotion result | Public |
 | Promotion lookup | Product ID | Snapshot-active offer, original price, percentage, calculated price or explicit ambiguity | Public |
 | Public policy lookup | Topic or question | Only classified customer-facing passages and source locators | Public |
 | Stock lookup | Product ID | Exact recorded quantity and status | staff permission, if selected |
@@ -57,9 +57,9 @@ Unknown/missing statuses and missing, negative or noninteger quantities fail imp
 
 Only `available` items qualify for an available-only filter or an available recommendation/alternative. Explain temporary unavailability for active stockouts, upcoming availability for `coming_soon`, and catalog removal for discontinued items. Do not promise restock/release dates, preorders or discontinued-stock sales without source support.
 
-The model may explain candidates using recorded attributes, but cannot invent specifications or override filters. A budget means the maximum supported payable price. For each product, use the calculated price from a unique applicable snapshot-active promotion when available; otherwise use the recorded base price. Filter on that amount before ranking and report which price was compared. If multiple promotions make the payable price ambiguous, do not claim the product meets the budget; report the ambiguity or use the base price only when clearly labeled as such.
+The model may explain candidates using recorded attributes, but cannot invent specifications or override filters. A budget means the maximum supported payable price for the requested payment method. Use a unique applicable snapshot-active promotional price; if no applicable promotion exists and payment is fully by PIX, use base price × 0.95 ([policy §3, p. 3](../data/políticas_da_loja.pdf#page=3)); otherwise use the recorded base price. Do not assume PIX when payment is unspecified. Filter on that amount before ranking and return it with its payment condition and pricing sources. If multiple promotions make the payable price ambiguous, report the ambiguity or use the base price only when clearly labeled as such, without a PIX discount; do not claim an ambiguous discount makes the product fit.
 
-Promotion arithmetic uses Decimal and the requirements' half-up rounding. Do not stack promotions or apply the 5% PIX discount to promotional prices ([policy manual §6.2, p. 6](../data/políticas_da_loja.pdf#page=6)). Multiple applicable promotions remain ambiguous until precedence is established. An active flag is a snapshot fact, not a date-based validity check.
+Promotion and PIX arithmetic use Decimal and the requirements' half-up rounding to two decimal places. Application services enforce these rules before budget filtering; the model cannot supply a trusted discount or payable price. Do not stack promotions or apply the 5% PIX discount to promotional prices ([policy manual §6.2, p. 6](../data/políticas_da_loja.pdf#page=6)). Multiple applicable promotions remain ambiguous until precedence is established. An active flag is a snapshot fact, not a date-based validity check.
 
 ## Policy access
 
