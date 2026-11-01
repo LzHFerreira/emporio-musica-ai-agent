@@ -38,7 +38,22 @@ Return structured outcomes (found, not found, ambiguous, unavailable, denied); m
 
 ## Catalog and recommendations
 
-Filter in the database, including budget. Clarify ambiguous names or return bounded candidates. Derive availability from validated stock and status; clarify unknown or contradictory status rules before implementation. Hide exact stock in public projections.
+Filter in the database, including budget and the availability table below. Clarify ambiguous names or return bounded candidates. Hide exact stock in public projections.
+
+### Availability — FR-03, FR-04
+
+[Policy §7.3, p. 7](../data/políticas_da_loja.pdf#page=7) distinguishes temporary stockouts from discontinued products, which leave the catalog. Project decision: status gates sellability; `coming_soon` is not yet available even with positive stock.
+
+| Status | Valid quantity | Public outcome | Sellable |
+| --- | --- | --- | --- |
+| active | > 0 | available | Yes |
+| active | 0 | temporarily_unavailable | No |
+| coming_soon | > 0 or 0 | coming_soon | No |
+| discontinued | > 0 or 0 | discontinued | No |
+
+Unknown/missing statuses and missing, negative or noninteger quantities fail import validation. If encountered at read time, return availability unknown and exclude the item from sellable results; never infer availability from quantity alone.
+
+Only `available` items qualify for an available-only filter or an available recommendation/alternative. Explain temporary unavailability for active stockouts, upcoming availability for `coming_soon`, and catalog removal for discontinued items. Do not promise restock/release dates, preorders or discontinued-stock sales without source support.
 
 The model may explain candidates using recorded attributes, but cannot invent specifications or override filters. A budget means the maximum supported payable price. For each product, use the calculated price from a unique applicable snapshot-active promotion when available; otherwise use the recorded base price. Filter on that amount before ranking and report which price was compared. If multiple promotions make the payable price ambiguous, do not claim the product meets the budget; report the ambiguity or use the base price only when clearly labeled as such.
 
@@ -72,7 +87,7 @@ Trace tests to FR-03–FR-13 and NFR-01–NFR-06 as applicable. Cover transactio
 
 - Confirm whether contributor access is included.
 - Review policy passage classification and exact source locators.
-- Confirm source status vocabulary, promotion applicability and any normalization rules.
+- Confirm promotion applicability and any normalization rules; product availability follows the table above.
 - Set query bounds, verification lifetimes and rate limits.
 - Define validated source-update and import/reconciliation semantics, including handling of records removed from canonical CSVs; assign BU ownership of source maintenance for any real-world deployment.
 - Select the user-interface and model integration separately from these service contracts.
