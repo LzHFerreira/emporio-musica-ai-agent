@@ -1,10 +1,10 @@
 # Data-access design
 
-Status: proposed design, pending review. No implementation or validation is claimed. This design follows [requirements](requirements.md); customer order verification is required, while staff access remains optional.
+Status: design pending implementation; no behavioral validation is claimed. The accepted customer boundary uses authenticated WhatsApp sender metadata, a unique stored-customer match and order ownership checks ([requirements](requirements.md#order-verification)); no SMS or verification form is required. Django integration remains under review; staff access remains optional.
 
 ## Decision
 
-Use SQLite as a derived query store for canonical project CSVs, with Django ORM models and read-only conversational services, as accepted in [ADR-0001](adr/0001-use-sqlite-for-structured-data.md). The CSVs remain authoritative; database imports must not silently supersede or diverge from them. Policy lookup uses curated, classified sections; the model receives bounded, permitted results, never database, SQL, filesystem or full-manual access.
+Use SQLite as a derived query store for canonical project CSVs with read-only conversational services; Django ORM integration is under review ([ADR-0001](adr/0001-use-sqlite-for-structured-data.md)). The CSVs remain authoritative; database imports must not silently supersede or diverge from them. Policy lookup uses curated, classified sections; the model receives bounded, permitted results, never database, SQL, filesystem or full-manual access.
 
 No vector database, embeddings or agent framework is required for this design. Revisit policy search if measured section coverage is insufficient.
 
@@ -20,7 +20,7 @@ Link products to categories, promotions to products, orders to customers, and it
 
 ## Access contracts
 
-The server derives access context from the Django request and server-side verification state. Tool arguments cannot supply trusted roles, permissions or a verified customer ID. Every service enforces its own authorization, including calls made outside the user interface.
+The server derives customer context from authenticated transport sender metadata and a unique normalized phone match; message text and model output cannot establish or change that binding. Transport identity does not automatically establish customer-order ownership. Tool arguments cannot supply trusted roles, permissions or a verified customer ID. Every service enforces its own authorization, including calls made outside the user interface.
 
 | Operation | Inputs | Permitted result | Gate |
 | --- | --- | --- | --- |
@@ -30,8 +30,7 @@ The server derives access context from the Django request and server-side verifi
 | Public policy lookup | Topic or question | Only classified customer-facing passages and source locators | Public |
 | Stock lookup | Product ID | Exact recorded quantity and status | staff permission, if selected |
 | Internal policy lookup | Topic or question | Passages classified for the assigned permission | staff permission, if selected |
-| Request verification | Candidate order/customer locator | Generic acknowledgement; no existence confirmation | Public, rate limited |
-| Submit verification | Code through a dedicated application flow | Success/failure and server-side session-bound verification state | Rate limited |
+| Resolve customer context | Sender number from an authenticated channel event | Internal customer scope only; no customer record or match result to the model | Trusted adapter, unique normalized match, rate limited |
 | Order status | Order ID | Status and relevant available tracking/estimated-delivery fields | Verified customer owns order |
 
 Permission labels such as `view_exact_stock` and `view_internal_policy` are proposed logical capabilities; final Django permission names and assignment remain to be defined. staff authentication alone does not grant customer-order access.
@@ -69,31 +68,31 @@ Start with topic mapping and text search; filter by audience before ranking or m
 
 ## Order verification boundary
 
-Customer and order tables are accessible only through narrowly scoped services. Locate candidates without returning customer records to the model. Generate and validate codes outside the model, with expiry, single use, issuance/attempt limits and session binding. Choose numerical limits before implementation.
+Customer and order tables are accessible only through narrowly scoped services. Validate event authenticity and business/channel context, normalize the transport sender number and stored phones using explicit country rules, and require exactly one matching customer. Derive the customer scope server-side and recheck the match for every restricted request; message text, profile names and tool arguments cannot override it.
 
-Deliver simulated SMS only through a separate development-only reviewer channel, associated with the stored synthetic phone number. Never return codes or full contact details in chat, model context or ordinary logs. Do not enable the simulator as production authentication. Its association with the customer is an explicit synthetic-fixture assumption.
+No SMS challenge, OTP or verification form is used. This read-only prototype accepts control of the WhatsApp account associated with the recorded number, not proof of real-world identity. Missing, unavailable, unmatched or ambiguous sender numbers grant no customer access. A simulator supplies synthetic sender identities only through a trusted test harness and makes no live authentication claim.
 
-Scope the order query to the server-verified customer and requested order ID in the same query. Return only requested status and relevant tracking/delivery fields, excluding notes, payment details, totals and customer contacts. Clear expired verification state. Unsupported or failed verification leads to a generic explanation and the primary WhatsApp support route from the [contact-channel decision](requirements.md#data-and-policy-findings).
+Scope the order query to the sender-matched customer and requested order ID in the same query. Return only requested status and relevant tracking/delivery fields, excluding notes, payment details, totals and customer contacts. Failed matching, ownership or validation reveals no customer/order existence or details; give a generic explanation and offer human support in the same conversation. Public catalog/policy access does not require a customer match.
 
 ## Boundaries and provenance
 
-The following ingress and replay rules are proposed and **to be re-evaluated before implementation**, together with their [requirements and acceptance cases](requirements.md#chat-ingress-retention-and-replay). Apply the contract independently of tool projections. Run its server-side gate before model-based routing or other model calls and before conversation retention; disable raw request-body capture across middleware, telemetry and errors. Reject matching code/contact messages with a fixed, non-echoing application response; gate failures block processing.
+Follow the accepted [input-minimization and replay contract](requirements.md#chat-ingress-retention-and-replay), independently of tool projections. Validate supported message types, text, size and rate limits before model calls or retention; disable raw request-body capture. Remove clearly unnecessary personal-contact spans while preserving questions, budgets, ambiguous numeric identifiers and approved public store contacts. A contact pattern alone never rejects a message. On validation or minimization failure, use a fixed, non-echoing fallback without forwarding or retaining raw input.
 
-Keep verification-form values outside conversational tools and storage. If history is retained, record the ingress-policy version and revalidate before reuse; invalidate affected summaries and caches when source turns cannot pass the current gate. No history, retry or context-building path may bypass this check.
+Keep transport sender metadata, customer-matching details and removed personal-contact spans outside model context, transcripts and ordinary logs. Retain only minimized turns with trusted roles, provenance and policy versions. Validate output against permitted projections and approved public store contacts. Reuse only currently validated history and derivatives; omit unsafe content or rebuild it from safe turns, continuing supported new requests and clarifying missing context when needed. No history, retry or context-building path may bypass these checks or trust a client-supplied assistant role.
 
-Return source type, record ID or policy locator, and source version or modification marker where available. Distinguish source update time from import time so users and operators can identify which canonical version backs an answer. By default, logs include operation and safe outcome only, excluding raw messages, codes, customer records and sensitive tool arguments.
+Return source type, record ID or policy locator, and source version or modification marker where available. Distinguish source update time from import time so users and operators can identify which canonical version backs an answer. By default, logs include operation and safe outcome only, excluding raw messages, sender numbers, customer records and sensitive tool arguments.
 
 Model-facing tools call these services and receive only their permitted projections. Application checks apply before retrieval and before disclosure; prompts provide an additional behavioral instruction rather than the authorization mechanism. No operational write tools are included.
 
 ## Verification before implementation completion
 
-Trace tests to FR-03–FR-13 and NFR-01–NFR-06 as applicable. Cover transactional import failure and repeatability; public field allowlists; budget and availability filtering; promotion rounding and ambiguity; public policy filtering before ranking; direct unauthorized service calls; spoofed context; session expiry, cross-customer order requests, non-enumerating failures and absent codes in model inputs/logs.
+Trace tests to FR-03–FR-13 and NFR-01–NFR-06 as applicable. Cover transactional import failure and repeatability; public field allowlists; budget and availability filtering; promotion rounding and ambiguity; public policy filtering before ranking; direct unauthorized service calls; forged channel events; missing, unmatched or duplicate phone bindings; normalization and mapping changes; cross-customer order requests; non-enumerating failures and absent sender/matching details in model inputs/logs.
 
 ## Decisions to close
 
 - Confirm whether staff access is included.
 - Review policy passage classification and exact source locators.
 - Confirm promotion applicability and any normalization rules; product availability follows the table above.
-- Set query bounds, verification lifetimes and rate limits.
+- Set query bounds, sender-number normalization, customer binding and order-access rate limits.
 - Define validated source-update and import/reconciliation semantics, including handling of records removed from canonical CSVs; assign BU ownership of source maintenance for any real-world deployment.
-- Select the user-interface and model integration separately from these service contracts.
+- Define the WhatsApp adapter and trusted demonstration harness; select backend and model integration against the accepted sender-authentication contract.

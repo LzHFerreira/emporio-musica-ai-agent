@@ -21,7 +21,7 @@ The agent is expected to:
 - Handle missing, ambiguous, conflicting, and out-of-scope information.
 - Respect authorization boundaries when accessing customer-specific information.
 
-A protected staff interface remains under consideration; simulated SMS verification is required for customer-specific order access.
+A protected staff interface remains under consideration. Customer-specific order access uses the authenticated WhatsApp sender number, a unique stored customer match and server-side ownership checks; no SMS verification is required.
 
 ## Technical approach
 
@@ -30,15 +30,18 @@ Python is the only technology mandated by the challenge. Other choices will be j
 | Concern | Initial decision |
 |---|---|
 | Language | Python |
-| Web framework | Django |
-| Authentication | Django authentication |
+| Customer interface | WhatsApp Business; no customer website assumed |
+| Backend framework | Under review; Django remains a candidate |
+| Authentication | WhatsApp sender authentication; optional staff authentication remains under review |
 | Authorization | Application-enforced permissions and resource ownership |
 | Agent architecture | Under evaluation |
 | LLM and provider | Under evaluation |
-| Structured data access | SQLite via Django ORM ([ADR-0001](docs/adr/0001-use-sqlite-for-structured-data.md)) |
+| Structured data access | SQLite retained; Django ORM integration under review ([ADR-0001](docs/adr/0001-use-sqlite-for-structured-data.md)) |
 | Policy retrieval | Under evaluation |
-| Customer verification | Simulated SMS OTP workflow for customer-specific order access |
+| Customer verification | Authenticated sender number → unique customer match → owned orders; no SMS or verification form |
 | Conversation persistence | To be determined |
+
+The customer experience follows WhatsApp, the store's primary remote channel ([policy §7, p. 6](data/políticas_da_loja.pdf#page=6)). The [brief, p. 2](desafio_tecnico_ai_eng_artefact.pdf#page=2), permits simpler demonstration interfaces; live WhatsApp integration is not an assignment requirement. A simulator may demonstrate the intended channel contract, with its limits explicit. See the [revised channel requirements](docs/requirements.md#purpose-and-scope).
 
 ## Data sources
 
@@ -75,7 +78,7 @@ The [challenge, p. 3](desafio_tecnico_ai_eng_artefact.pdf#page=3), asks for reas
 | Installments | [§3.1, p. 3](data/políticas_da_loja.pdf#page=3) expands §3's summary: apply its tiers rather than a universal R$100 minimum. The below-R$50 exception does not affect current 1–3 installment scenarios: the cheapest product, including active promotions, and the smallest order are R$159.90, or 3 × R$53.30. |
 | Historical payment terms | Orders 9, 16 and 18 fall below §3.1's tier minimums. Preserve these canonical historical records and report administrative warnings when structural validation passes. Their recorded terms do not justify equivalent new installment offers. |
 | Exchanges and warranty | [§4.2, p. 4](data/políticas_da_loja.pdf#page=4) allows defect exchanges within 30 days of purchase; [§8.1, p. 7](data/políticas_da_loja.pdf#page=7) describes a 90-day warranty from receipt. Different remedies and start dates do not establish a contradiction. Explain the stated post-exchange route—manufacturer contact, with store mediation on request—and clarify unspecified mediation details only when needed. |
-| Contact numbers | Use [§7, p. 6](data/políticas_da_loja.pdf#page=6)'s (67) 3321-4500 as primary WhatsApp support, including verification-failure fallbacks. Retain [§1.2, p. 2](data/políticas_da_loja.pdf#page=2)'s (67) 3341-4444 as the listed company telephone/WhatsApp contact. Their stated roles support this mapping without treating either number as invalid. |
+| Contact numbers | Use [§7, p. 6](data/políticas_da_loja.pdf#page=6)'s (67) 3321-4500 as primary WhatsApp support, with failed customer matching routed to a human within the conversation. Retain [§1.2, p. 2](data/políticas_da_loja.pdf#page=2)'s (67) 3341-4444 as the listed company telephone/WhatsApp contact. Their stated roles support this mapping without treating either number as invalid. |
 | Metropolitan delivery | [§5.1, p. 4](data/políticas_da_loja.pdf#page=4) specifies R$35 below R$500 and free delivery above it. Equality is omitted, not contradicted. No recorded order or combination of supplied product prices reaches exactly R$500, including active promotions and permitted PIX discounts, so this gap does not block current scenarios. In a real word scenario, to avoid confusion with customer and staff, I would argue with the store that the equality should be included and treat the case as free delivery. |
 
 These are project interpretations of supplied sources, not legal conclusions or claims of live business validation. Recheck the data-dependent conclusions when canonical data or discount rules change. [Requirements and acceptance coverage](docs/requirements.md#data-and-policy-findings) define the resulting behavior; implementation and behavioral validation remain pending.
@@ -110,25 +113,29 @@ Required coverage is defined in [requirements](docs/requirements.md#acceptance-c
 
 ## AI-assisted development
 
-OpenAI Codex (**Luna 6, low reasoning effort**) supports the development workflow primarily through **mechanical execution and adversarial analysis**.
+I use OpenAI Codex for source inspection, requirements analysis, design alternatives, documentation and adversarial review. I define the problem, evaluate tradeoffs, approve decisions and remain responsible for the result.
 
-The project author owns requirements, architecture, system boundaries, assumptions, acceptance, and final responsibility for quality.
+### Workflow
 
-Codex may reason about delegated problems and propose alternatives, but its conclusions do not independently establish correctness or authorize engineering decisions.
+1. I define customer scenarios, scope and constraints, then ask Codex to inspect the challenge brief, policy manual and CSVs before developing requirements or recommending an architecture.
+2. Codex drafts requirements, acceptance cases and design alternatives. I request focused reviews against the original sources, sometimes through separate sessions or delegated agents, to find contradictions, missing behavior and weak assumptions.
+3. I challenge the findings: which passage supports the claim, which records demonstrate it, and does the disputed case affect the supplied scenarios? Codex checks passages, calculations and concrete counterexamples; I choose the business interpretation or leave the uncertainty explicit.
+4. Once I accept a decision, Codex updates the README, requirements, data-access design and ADRs as applicable. I revisit earlier choices when the business context or customer experience calls for it, and request another consistency review after changes.
+5. Changes are kept small and reviewable, preserving unrelated work. Codex checks the diff and runs relevant deterministic checks; I authorize commits and pushes. Findings, edits and check results are reported separately so a proposed correction is not confused with verified behavior.
 
 ### Work performed so far
 
-Codex assisted with initial documentation, requirements organization, order-verification alternatives, and inspection of the supplied challenge datasets.
+Earlier sessions used this cycle to refine budgets based on payable prices, product availability, policy interpretations, ownership of canonical data and cases for selecting operational data or policies. I questioned apparent policy conflicts and asked whether missing boundary rules were reachable with the supplied data before deciding how to handle them.
 
-The project author selected Django, the intended authentication and authorization approach, the interaction scenarios, and simulated SMS verification for customer-specific order access.
+The same process led me to reconsider my initial Django preference after recognizing WhatsApp as the store's customer channel, replace SMS verification with authenticated sender matching and order ownership checks, and replace blanket contact rejection with input minimization. Codex supplied analysis, alternatives and artifact revisions; I set and approved these directions.
 
 ### Verification and accountability
 
-Generated output is subject to engineering review.
+Adversarial findings are hypotheses to investigate. Agreement across sessions or agents does not establish correctness; source checks and tests support claims only within their demonstrated coverage.
 
-Adversarial findings are treated as hypotheses requiring investigation. Tests and deterministic tools provide evidence within their respective coverage and assumptions.
+Checks completed so far cover source inspection, data calculations, documentation consistency, local links, whitespace and change scope. The agent has not been implemented; runtime behavior, live integrations and security properties have not been validated.
 
-This section will be updated to reflect actual implementation contributions and verification practices.
+For executable changes, my configured workflow requires focused tests before implementation, with separate test and implementation agents. That phase has not begun in this project; this disclosure will be updated with the work performed and evidence obtained.
 
 ## Deliverables
 

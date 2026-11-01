@@ -6,7 +6,11 @@ Build a Python text-based customer-service assistant for the fictional Empório 
 
 This document defines the working requirements, assumptions and acceptance criteria. The challenge brief remains authoritative for the original assignment. Project decisions and proposed extensions are identified separately.
 
-Django is the selected framework, with SQLite accessed through the Django ORM ([ADR-0001](adr/0001-use-sqlite-for-structured-data.md)). The agent architecture, model and provider remain undecided.
+Django is a backend candidate under review; SQLite remains selected, while its Django ORM integration is reopened ([ADR-0001](adr/0001-use-sqlite-for-structured-data.md)). LangChain is not selected; the agent architecture, model and provider remain undecided.
+
+**Customer channel:** design for WhatsApp Business, the primary remote channel in [policy §7, p. 6](../data/políticas_da_loja.pdf#page=6). No store website is assumed, per project direction; this is not an explicit claim in the brief. The [brief, p. 2](../desafio_tecnico_ai_eng_artefact.pdf#page=2), permits CLI, notebook, API or simple UI demonstrations, so a live WhatsApp connection is not mandatory for submission.
+
+Target flow: customer WhatsApp message → authenticated channel adapter → application services and permitted data/policy lookup → validated reply through WhatsApp. Evaluate the [WhatsApp Business Platform](https://whatsappbusiness.com/developers/developer-hub/) API integration separately from the backend and agent framework; select direct integration or a provider, and live testing or simulation, before implementation. Define sender-bound conversation state, duplicate-event handling, delivery failures, human escalation and applicable messaging-window/template rules. Transport sender identifiers stay server-side, outside model context and ordinary logs; a claimed phone number or sender identity alone does not authorize an order lookup.
 
 **Status:** Requirements analysis. No behavioral validation has been completed.
 
@@ -36,7 +40,7 @@ The assistant supports:
 4. Customer-facing policy questions.
 5. Missing, conflicting and out-of-scope information.
 6. Attempts to override instructions or access restrictions.
-7. Customer-specific order-status questions after simulated SMS verification.
+7. Customer-specific order-status questions after channel-appropriate verification and ownership checks.
 
 ### Proposed extensions
 
@@ -47,12 +51,12 @@ Real SMS delivery, production identity verification, account recovery, purchases
 ## Actors and access
 
 - **Public client:** may access public store information, product prices and availability, recommendations and customer-facing policies without signing in.
-- **staff, if implemented:** uses Django authentication and explicitly assigned permissions to access restricted operational information.
+- **staff, if implemented:** uses application authentication and explicitly assigned permissions to access restricted operational information; Django authentication remains a candidate.
 - **Verified customer context:** grants temporary, narrowly scoped access to orders belonging to the corresponding synthetic customer.
 
 A role or identity claimed in a message grants no permission.
 
-Django authentication for staff and simulated customer verification are separate mechanisms. Neither automatically grants the permissions of the other.
+Staff authentication and customer verification are separate mechanisms. Neither automatically grants the permissions of the other.
 
 Before implementing restricted retrieval, define the permitted public fields, staff permissions and customer-facing policy sections. Until classified, internal content is withheld from public responses.
 
@@ -85,7 +89,7 @@ Challenge and policy claims require exact page, section or field references befo
 | FR-10 | Handle missing, ambiguous or conflicting information. | Clarify when needed, state when sources are inconclusive and never invent store-specific facts. Empty or failed lookups cannot support factual claims about the requested data. | README; Project |
 | FR-11 | Minimize customer information exposure. | Return only fields required for an authorized operation; omit unnecessary names, phone numbers, emails and unrelated order details from model inputs, responses and logs. | README; Project |
 | FR-12 | Allow public customer interaction. | Anonymous users may ask permitted questions; claimed staff status grants no added access. | Project |
-| FR-13 | Restrict order-status access through simulated verification. | Establish a verification context, check order ownership server-side and return permitted fields only. Failed, unavailable or ambiguous verification reveals no order details. | README; Project |
+| FR-13 | Restrict order-status access through channel-appropriate verification. | Establish a verification context, check order ownership server-side and return permitted fields only. Failed, unavailable or ambiguous verification reveals no order details. | README; Project |
 | FR-14 | Select operational data, policies or both using the current request and conversation context. | Demonstrate the source-selection cases below, preserving relevant constraints and clarifying unresolved references. | [Challenge, p. 1](../desafio_tecnico_ai_eng_artefact.pdf#page=1); Project |
 
 ### Promotion rules
@@ -109,48 +113,47 @@ Access control must be enforced by application services and tools, independently
 
 ### Chat ingress, retention and replay
 
-**Status: proposed; to be re-evaluated before implementation.** Review detection coverage, false positives and the effect of whole-message rejection on legitimate questions; the rules and acceptance cases below remain provisional.
+**Accepted direction: preserve useful questions and minimize unnecessary personal details.** A phone/email pattern alone must not reject the message. Authenticated WhatsApp sender metadata remains application-only for routing and customer matching. No verification codes or verification form are required; minimization rules still need implementation and validation.
 
-Every chat submission, including direct API calls, must pass a deterministic server-side gate before any model call (including routing, classification or embeddings), conversation storage, cache, telemetry or request-body logging. The gate itself must not use a model or retain raw input.
+Every submission, including direct API calls, must pass deterministic server-side checks for supported message type, valid text, configured input size and rate limits before model calls or retention. Authenticate channel events separately. Disable raw request-body capture across middleware, telemetry and errors. Validation and minimization must not use a model or retain raw input.
 
-Reject the entire message if it contains a verification-code candidate, phone-number or email pattern; do not extract or forward the remaining text. Return a fixed application response without echoing the input, directing verification details to the dedicated form and asking the user to resend the question without them. Chat input never submits or validates a code.
+Before model calls or retention, remove clearly unnecessary personal-contact spans from a copy of the text while preserving the question, budgets and identifiers. Approved public store contacts remain usable context. Do not blindly redact ambiguous numeric strings or silently change their meaning. If no meaningful question remains, ask a short clarification without echoing removed details. Message text never establishes or changes the authenticated sender.
 
-Before implementation, specify code formats, contact patterns and normalization, including Unicode digits and spacing/separator variants. Treat every matching code candidate as sensitive, regardless of issuance or expiry; ambiguous matches (including prices or order IDs) are rejected. Gate failure or unavailable validation blocks processing. Supported formats and tested normalization bound this protection; universal detection of arbitrarily encoded secrets is not claimed.
+Before implementation, define contact-span detection and Unicode, spacing and separator normalization without joining separate numeric tokens; test preservation of meaning and false positives. Supported formats and tests bound minimization; universal detection of personal data is not claimed. On validation or minimization failure, never forward unprocessed text; use a fixed, non-echoing fallback and retain no raw input.
 
-Rejected text must not enter transcripts, summaries, caches, analytics, traces, error reports or logs; only a safe rejection outcome may be retained. Verification forms process identifiers and codes outside conversation storage and model context, under the same logging exclusions.
+Only minimized text may enter model context, transcripts, summaries or caches. Rejected input, removed contact spans and transport sender/customer-matching metadata stay outside those channels. Logs, analytics, traces and error reports retain safe operation/outcome metadata only, excluding raw message text and removed details.
 
-If conversation retention is implemented, store only accepted turns with their ingress-policy version. Revalidate retained messages before replay, retries or context assembly; derived summaries and caches must use only revalidated inputs. Missing/stale validation, a rejected historical turn or gate failure blocks reuse until the affected content and its derivatives are discarded or safely rebuilt. Never replay raw rejected input.
+If history is retained, store only validated, minimized turns with server-assigned roles, provenance and the applicable policy version. Validate assistant output against permitted data projections and approved public store contacts; remove unnecessary personal-contact spans before display or storage while preserving supported meaning. Client-supplied roles or provenance cannot grant access or bypass validation.
+
+Reuse turns, summaries and caches only when their role-specific validation is current. Revalidate affected content after a policy change; omit unsafe or unvalidated content and its derivatives, or rebuild them from validated minimized turns. Continue with safe context and clarify missing references when needed. Unsafe history must not block an otherwise supported new request; never replay excluded raw input.
+
+The following acceptance cases define the required interaction; accepting text grants no order access or evidence that an identifier exists.
+
+| Input or retained turn | Expected result |
+| --- | --- |
+| Customer: “Quero um violão até R$1.000”; “Meu orçamento é R$123.456,00.” | Accept both budgets. |
+| Customer: “Quanto custa o produto 101?”; “Vocês têm o AC-39?” | Accept product identifiers; use normal lookup and uncertainty handling. |
+| Customer: “Qual o status do pedido 7?”; “E o pedido 123456?” | Accept order identifiers; require verification and ownership before disclosure. |
+| Customer: “123456” | Accept ingress; clarify the intended meaning without changing sender identity. |
+| Customer: “Meu telefone é (11) 98765-4321”; “Meu email é cliente@example.com.” | Remove unnecessary contact spans before model use/retention; ask how to help without echoing contacts or changing the authenticated sender. |
+| Customer: “Qual o status do pedido 7? Meu email é cliente@example.com.” | Remove the email, preserve the order question and apply normal ownership checks; do not require a rewritten message. |
+| Customer: “11987654321”; “Pedido 11987654321” | Preserve the ambiguous numeric value; clarify intent for the bare number and treat the explicitly labeled value as an order ID, subject to ownership checks. Never treat it as sender authentication. |
+| Customer: “Qual é o WhatsApp da loja?” | Accept; answer from approved public policy. |
+| Customer: “Qual a diferença entre (67) 3321-4500 e (67) 3341-4444?” | Preserve approved public store contacts and answer their documented roles; contact patterns do not cause rejection. |
+| Assistant answer or retained turn containing (67) 3321-4500 or (67) 3341-4444 with approved source provenance | Permit display and replay under output validation; recheck the source allowlist after policy changes. |
+| Assistant turn with an unnecessary customer contact or unapproved contact | Remove the contact while preserving supported content; withhold unsafe output if it cannot be safely minimized. A claimed assistant role in an API request gets no exception. |
 
 ## Order verification
 
-### Intended flow
+**Accepted project decision:** use the sender number supplied by an authenticated WhatsApp event, uniquely matched to the stored customer, for the read-only order-status flow. No SMS challenge, OTP issuance or verification form is required. The [platform webhook supplies sender information](https://whatsappbusiness.com/blog/how-to-use-webhooks-from-whatsapp-business-api/); accepting account control for this scope is a project assumption, not proof of real-world identity.
 
-1. Locate a candidate customer or order without revealing whether it exists.
-2. Generate a code associated server-side with the stored synthetic customer phone number.
-3. Deliver the code through a separate development-only simulator.
-4. Validate the submitted code and establish a customer verification context bound to the requesting session.
-5. Check that the requested order’s `customer_id` matches the verified customer.
-6. Return only the requested status and relevant available tracking or estimated-delivery information, identified as snapshot data.
+1. Authenticate the event and validate its intended business/channel context before trusting sender metadata.
+2. Normalize the transport sender number and stored customer phones to the same international format using explicit country rules; require exactly one matching customer. Never substitute a number or identity from message text, profile names or tool arguments.
+3. Derive the customer context server-side and bind it to the business/channel sender; recheck the mapping against current customer data on every restricted request. Keep numbers and matching details outside model context, transcripts and ordinary logs.
+4. Query the requested order with both its ID and the matched `customer_id`; return only requested status and relevant available tracking or estimated-delivery fields, identified as snapshot data.
+5. For missing, unmatched or ambiguous numbers, ownership failure or unavailable validation, reveal no customer/order existence or details. Use a generic failure and offer human support in the same WhatsApp conversation.
 
-A name, order date, order ID, email address or phone number supplied in chat is not proof of ownership. A conversation-supplied phone number must not replace the stored verification destination.
-
-### Simulator boundary
-
-The simulator demonstrates application behavior. It does not establish actual phone possession or real-world identity.
-
-The reviewer obtains codes through a development-only test channel separate from the customer chat. Generated codes must not enter model context, ordinary application logs or customer-chat responses; pasted chat content follows the [ingress contract and its detection limits](#chat-ingress-retention-and-replay).
-
-The simulator must be clearly labeled and excluded from any production authentication claim.
-
-### Required properties
-
-Codes must be unpredictable, single-use, expire and have issuance and verification-attempt limits. Verification state must remain server-side.
-
-Before implementation, record the chosen code lifetime, attempt limits, issuance limits and verification-session lifetime as explicit configuration with acceptance tests.
-
-Failed and ambiguous lookups must use responses that do not reveal whether a customer or order exists. Verification for one customer must not authorize another customer’s orders.
-
-Failed or unavailable verification receives a generic failure response and a store-contact route without disclosing order details.
+If transport metadata does not expose a usable sender number, do not infer one or grant access. Public catalog/policy questions remain available independently of customer matching. Define normalization and lookup/rate limits before implementation. A non-WhatsApp demo may supply synthetic sender identities only through a trusted test harness; label the simulated boundary and never accept arbitrary caller-supplied identities on public endpoints as authenticated evidence.
 
 ## Nonfunctional requirements
 
@@ -158,7 +161,7 @@ Failed or unavailable verification receives a generic failure response and a sto
 | --- | --- | --- |
 | NFR-01 | Ground store-specific factual answers in supplied sources. | Compare representative answers with identified source records or policy sections, including missing and conflicting cases. |
 | NFR-02 | Enforce authorization independently of the conversation. | Test application and tool access directly, including anonymous users, insufficient permissions, impersonation and cross-customer requests where applicable. |
-| NFR-03 | Minimize data crossing system boundaries. | Inspect model requests, responses and logs against the permitted-field definitions. Verify that verification codes and unnecessary customer fields are absent. |
+| NFR-03 | Minimize data crossing system boundaries. | Inspect model requests, responses and logs against permitted-field definitions. Verify that transport sender metadata, customer-matching details and removed contact spans are absent, and that minimization preserves supported questions and identifiers. |
 | NFR-04 | Represent data version clearly. | Treat project CSVs as canonical; answers reflect the imported canonical version and identify its update/import time where available. Do not claim live synchronization with external operational systems. |
 | NFR-05 | Make the project reproducible and reviewable. | A reviewer can configure and run the completed application and tests using documented dependencies, fixtures and environment settings. |
 | NFR-06 | Restrict internal policy disclosure. | Public retrieval and response paths expose only classified customer-facing policy information. Test internal-content requests and prompt-injection attempts. |
@@ -180,7 +183,7 @@ The following policy interpretations and unresolved questions require explicit h
 | The cheapest [product](../data/desafio_tecnico_ai_eng%20-%20products.csv), including snapshot-active promotions, is product 119 at R$159.90. The lowest [order total](../data/desafio_tecnico_ai_eng%20-%20orders.csv) is also R$159.90; order 7 records 3 installments of R$53.30. | The below-R$50 exception does not affect 1–3 installment answers for the supplied data and is not an implementation blocker. Do not request clarification for these supported amounts. Recheck this conclusion when canonical prices, promotions or order totals change. |
 | Historical orders 9 (R$349.90 / 6), 16 (R$429.90 / 6) and 18 (R$459.90 / 12) have installment amounts below §3.1's respective R$80/R$100 minimums. | Report these fixture-policy discrepancies administratively; preserve recorded totals and payment methods and allow import when structural validation passes. Historical terms do not authorize equivalent new installment offers. Existing order-access and field restrictions still apply. |
 | The [30-day defect-exchange period (§4.2, p. 4)](../data/políticas_da_loja.pdf#page=4) starts at purchase; the [90-day warranty (§8.1, p. 7)](../data/políticas_da_loja.pdf#page=7) starts at receipt. The unresolved question is how store mediation after the exchange window handles claims within the 90-day warranty. | Report both periods and §4.2's stated route: contact the manufacturer; store mediation is available on request. Seek store clarification for unspecified mediation details; the different periods alone do not establish a conflict or justify refusing supported guidance. |
-| Project decision: [§7, p. 6](../data/políticas_da_loja.pdf#page=6) identifies (67) 3321-4500 as the primary remote-service WhatsApp channel; [§1.2, p. 2](../data/políticas_da_loja.pdf#page=2) lists (67) 3341-4444 as the company telephone/WhatsApp contact. | Use (67) 3321-4500 for WhatsApp support and store-contact fallbacks, including failed verification. Retain (67) 3341-4444 as the listed company telephone/WhatsApp contact. Label both by their source roles when explaining the difference; these numbers alone do not trigger conflict or refusal. |
+| Project decision: [§7, p. 6](../data/políticas_da_loja.pdf#page=6) identifies (67) 3321-4500 as the primary remote-service WhatsApp channel; [§1.2, p. 2](../data/políticas_da_loja.pdf#page=2) lists (67) 3341-4444 as the company telephone/WhatsApp contact. | Use (67) 3321-4500 for WhatsApp support; failed customer matching routes to human support in the same conversation instead of redirecting the customer to the bot’s own number. Retain (67) 3341-4444 as the listed company telephone/WhatsApp contact. Label both by their source roles when explaining the difference; these numbers alone do not trigger conflict or refusal. |
 | [§5.1, p. 4](../data/políticas_da_loja.pdf#page=4) specifies free metropolitan delivery above R$500 and R$35 below R$500; equality is a missing boundary rule, not a contradiction. None of the 20 recorded orders or product-price combinations reaches exactly R$500, including snapshot-active promotions and the permitted PIX discount. | Apply the stated fees to supported amounts; the missing equality rule does not block current data scenarios or require clarification for them. For an explicit hypothetical R$500 order, explain that the fee is unspecified and seek store clarification. Recheck reachability when canonical prices, promotions, discount rules or order totals change. |
 
 These findings describe supplied policy text; they do not establish legal conclusions.
@@ -192,6 +195,7 @@ Each test or evaluation case must reference the requirement IDs it checks and id
 | Coverage | Minimum cases |
 | --- | --- |
 | Persona and contact — FR-01, FR-02 | Portuguese response; recorded hours; primary WhatsApp support uses (67) 3321-4500; company telephone/WhatsApp listing retains (67) 3341-4444; explain both source roles when asked about the difference without treating it as an unresolved conflict. |
+| WhatsApp channel — FR-11, FR-12, FR-13, NFR-02, NFR-03 | Demonstrate inbound message → permitted lookup → outbound reply; reject forged channel events; isolate senders; handle duplicates, delivery failures and human escalation. Define verification and messaging-window cases before implementation; label simulated transport and identity limits explicitly. |
 | Installments — FR-06 | Apply §3.1 at the 3/4 and 6/7 installment boundaries; permit R$480 in 6 installments of R$80; reject 7 installments of R$80; order 7 supports 3 installments of R$53.30 without clarification about the R$50 exception. |
 | Historical installment discrepancies — FR-06, NFR-04 | Import orders 9, 16 and 18 unchanged with administrative discrepancy reporting; preserve structural validation; do not use historical payment terms to justify offers below §3.1's tier minimums or expand permitted order fields. |
 | Recommendations and products — FR-03, FR-04 | Suitable recommendation; missing preferences; base-price budget constraint; snapshot-active promotional price within budget despite base price exceeding it; all availability-table combinations; products 136 (`discontinued`, 13), 130 (`coming_soon`, 2), 96 (`active`, 0); unknown/invalid availability inputs; ambiguous product name. Explanations identify the amount used for budget filtering. |
@@ -203,10 +207,10 @@ Each test or evaluation case must reference the requirement IDs it checks and id
 | Public and staff access — FR-07, FR-12, NFR-02 | Anonymous public access; staff-interface denial; permitted staff; authenticated user without permission. staff cases apply only if selected. |
 | Scope and uncertainty — FR-08, FR-10 | Unrelated request; accessory request handled per policy; absent information; conflicting sources. |
 | Adversarial behavior — FR-09 | Role impersonation; instruction override; malicious retrieved content; legitimate request following a rejected attack. |
-| Data boundaries — FR-11, NFR-03 | Permitted fields only in model inputs, responses and logs; no verification codes in those channels. |
-| Chat ingress and replay — FR-11, FR-13, NFR-03 | Paste a code alone and within a legitimate question, phone and email patterns, Unicode/separator variants, expired/unissued code candidates and numeric false positives; repeat through direct API calls. Assert zero model calls and no raw retention or echoes on rejection. Inject gate failure; inspect request/error logs and telemetry. Recheck historical turns, summaries, caches and retries after a policy change or missing validation; prevent unsafe reuse. A clean question still succeeds. |
+| Data boundaries — FR-11, NFR-03 | Permitted fields only in model inputs, responses and logs; no transport sender metadata, customer-matching details or removed personal-contact spans in those channels. |
+| Chat ingress and replay — FR-11, FR-13, NFR-03 | Run every [input and replay example](#chat-ingress-retention-and-replay), including direct API calls. Verify mixed questions succeed after minimization, numeric identifiers survive and public store contacts remain usable. Test message type/size/rate limits, forged roles, minimization failure, output validation and safe telemetry. Invalid input makes zero model calls; failures never forward raw text. After policy changes, unsafe history and derivatives are excluded while safe new questions continue; test clarification when excluded context was necessary. |
 | Data version — NFR-04 | Answers reflect canonical CSV values; source/import timing is identified where available; no claim of live synchronization with external operational systems. |
-| Order verification — FR-13 | Successful verification; different verified customer; invalid, expired and reused codes; issuance and attempt limits; session binding and expiry; failed or unavailable verification offers WhatsApp support at (67) 3321-4500 without order disclosure; ambiguous match; missing tracking data; non-enumerating failures. |
+| Order verification — FR-13 | Valid authenticated sender with one normalized customer match; owned order; cross-customer order; forged webhook or sender override in text/tool arguments; missing sender; unmatched or duplicate customer phone; normalization variants; changed customer binding; lookup failure; missing tracking; generic failures and human escalation without order disclosure; isolated simulated identities. |
 | Reproducibility — NFR-05 | Clean setup using the completed README and documented fixtures. |
 
 For adversarial and unsupported requests, success means the expected refusal, clarification or safe handling—not completion of the requested attack.
@@ -236,7 +240,7 @@ Before the relevant implementation begins:
 - Confirm whether staff access is included in the prototype.
 - Define public fields, staff permissions and policy-disclosure boundaries.
 - Add exact source locators for challenge and policy claims.
-- Choose verification limits and record them as configuration.
+- Define sender-number normalization, customer binding and order-access rate limits; record them as configuration.
 - Select and justify the agent, model and provider.
 
 These decisions must remain consistent with the README.

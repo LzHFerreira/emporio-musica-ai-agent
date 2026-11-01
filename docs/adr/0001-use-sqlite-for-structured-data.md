@@ -1,15 +1,15 @@
 # ADR-0001: Use SQLite for structured operational data
 
-- Status: Accepted
+- Status: SQLite accepted; Django integration under review following the WhatsApp channel decision (2026-11-01).
 - Date: 2026-10-31
 
 ## Context
 
-The Django prototype uses small related CSV datasets as its canonical project sources and needs relational queries with application-enforced access to restricted fields and orders. SQLite is a derived query store, not an independent business-data authority. There is no demonstrated need for a separate database server or concurrent writes.
+The prototype uses small related CSV datasets as its canonical project sources and needs relational queries with application-enforced access to restricted fields and orders. SQLite is a derived query store, not an independent business-data authority. There is no demonstrated need for a separate database server or concurrent writes.
 
 ## Decision
 
-Use SQLite as the application SQL database, accessed through Django models and the Django ORM.
+Use SQLite as the application SQL database. The Django models, ORM, management commands and Admin discussed below belong to the initial integration proposal; re-evaluate them against the [WhatsApp channel requirements](../requirements.md#purpose-and-scope) before implementation.
 
 Keep CSVs as versioned canonical project sources. A management command transactionally validates and repeatably imports selected data into SQLite, preserving source IDs and source-file provenance without duplicating unchanged records. In a real-world scenario, the responsible BU owns updating the canonical data. A BU-facing maintenance interface may be implemented if time permits; any such interface must update the canonical source through validation rather than introduce database-only facts.
 
