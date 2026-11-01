@@ -107,6 +107,20 @@ The prototype must define and test which fields may cross each boundary: data ac
 
 Access control must be enforced by application services and tools, independently of model instructions.
 
+### Chat ingress, retention and replay
+
+**Status: proposed; to be re-evaluated before implementation.** Review detection coverage, false positives and the effect of whole-message rejection on legitimate questions; the rules and acceptance cases below remain provisional.
+
+Every chat submission, including direct API calls, must pass a deterministic server-side gate before any model call (including routing, classification or embeddings), conversation storage, cache, telemetry or request-body logging. The gate itself must not use a model or retain raw input.
+
+Reject the entire message if it contains a verification-code candidate, phone-number or email pattern; do not extract or forward the remaining text. Return a fixed application response without echoing the input, directing verification details to the dedicated form and asking the user to resend the question without them. Chat input never submits or validates a code.
+
+Before implementation, specify code formats, contact patterns and normalization, including Unicode digits and spacing/separator variants. Treat every matching code candidate as sensitive, regardless of issuance or expiry; ambiguous matches (including prices or order IDs) are rejected. Gate failure or unavailable validation blocks processing. Supported formats and tested normalization bound this protection; universal detection of arbitrarily encoded secrets is not claimed.
+
+Rejected text must not enter transcripts, summaries, caches, analytics, traces, error reports or logs; only a safe rejection outcome may be retained. Verification forms process identifiers and codes outside conversation storage and model context, under the same logging exclusions.
+
+If conversation retention is implemented, store only accepted turns with their ingress-policy version. Revalidate retained messages before replay, retries or context assembly; derived summaries and caches must use only revalidated inputs. Missing/stale validation, a rejected historical turn or gate failure blocks reuse until the affected content and its derivatives are discarded or safely rebuilt. Never replay raw rejected input.
+
 ## Order verification
 
 ### Intended flow
@@ -124,7 +138,7 @@ A name, order date, order ID, email address or phone number supplied in chat is 
 
 The simulator demonstrates application behavior. It does not establish actual phone possession or real-world identity.
 
-The reviewer obtains codes through a development-only test channel separate from the customer chat. Codes must not enter model context, ordinary application logs or customer-chat responses.
+The reviewer obtains codes through a development-only test channel separate from the customer chat. Generated codes must not enter model context, ordinary application logs or customer-chat responses; pasted chat content follows the [ingress contract and its detection limits](#chat-ingress-retention-and-replay).
 
 The simulator must be clearly labeled and excluded from any production authentication claim.
 
@@ -189,6 +203,7 @@ Each test or evaluation case must reference the requirement IDs it checks and id
 | Scope and uncertainty — FR-08, FR-10 | Unrelated request; accessory request handled per policy; absent information; conflicting sources. |
 | Adversarial behavior — FR-09 | Role impersonation; instruction override; malicious retrieved content; legitimate request following a rejected attack. |
 | Data boundaries — FR-11, NFR-03 | Permitted fields only in model inputs, responses and logs; no verification codes in those channels. |
+| Chat ingress and replay — FR-11, FR-13, NFR-03 | Paste a code alone and within a legitimate question, phone and email patterns, Unicode/separator variants, expired/unissued code candidates and numeric false positives; repeat through direct API calls. Assert zero model calls and no raw retention or echoes on rejection. Inject gate failure; inspect request/error logs and telemetry. Recheck historical turns, summaries, caches and retries after a policy change or missing validation; prevent unsafe reuse. A clean question still succeeds. |
 | Data version — NFR-04 | Answers reflect canonical CSV values; source/import timing is identified where available; no claim of live synchronization with external operational systems. |
 | Order verification — FR-13 | Successful verification; different verified customer; invalid, expired and reused codes; issuance and attempt limits; session binding and expiry; failed or unavailable verification offers WhatsApp support at (67) 3321-4500 without order disclosure; ambiguous match; missing tracking data; non-enumerating failures. |
 | Reproducibility — NFR-05 | Clean setup using the completed README and documented fixtures. |

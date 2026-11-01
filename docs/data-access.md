@@ -77,6 +77,10 @@ Scope the order query to the server-verified customer and requested order ID in 
 
 ## Boundaries and provenance
 
+The following ingress and replay rules are proposed and **to be re-evaluated before implementation**, together with their [requirements and acceptance cases](requirements.md#chat-ingress-retention-and-replay). Apply the contract independently of tool projections. Run its server-side gate before model-based routing or other model calls and before conversation retention; disable raw request-body capture across middleware, telemetry and errors. Reject matching code/contact messages with a fixed, non-echoing application response; gate failures block processing.
+
+Keep verification-form values outside conversational tools and storage. If history is retained, record the ingress-policy version and revalidate before reuse; invalidate affected summaries and caches when source turns cannot pass the current gate. No history, retry or context-building path may bypass this check.
+
 Return source type, record ID or policy locator, and source version or modification marker where available. Distinguish source update time from import time so users and operators can identify which canonical version backs an answer. By default, logs include operation and safe outcome only, excluding raw messages, codes, customer records and sensitive tool arguments.
 
 Model-facing tools call these services and receive only their permitted projections. Application checks apply before retrieval and before disclosure; prompts provide an additional behavioral instruction rather than the authorization mechanism. No operational write tools are included.
