@@ -40,21 +40,21 @@ The assistant supports:
 
 ### Proposed extensions
 
-A protected contributor interface for internal procedures and exact stock quantities remains an optional project extension. Its requirements below apply only if selected; it is not a challenge baseline requirement.
+A protected staff interface for internal procedures and exact stock quantities remains an optional project extension. Its requirements below apply only if selected; it is not a challenge baseline requirement.
 
 Real SMS delivery, production identity verification, account recovery, purchases, order changes, and direct conversational writes to stock or price are outside the prototype scope. A BU-facing source-maintenance interface is a possible time-permitting extension.
 
 ## Actors and access
 
 - **Public client:** may access public store information, product prices and availability, recommendations and customer-facing policies without signing in.
-- **Contributor, if implemented:** uses Django authentication and explicitly assigned permissions to access restricted operational information.
+- **staff, if implemented:** uses Django authentication and explicitly assigned permissions to access restricted operational information.
 - **Verified customer context:** grants temporary, narrowly scoped access to orders belonging to the corresponding synthetic customer.
 
 A role or identity claimed in a message grants no permission.
 
-Django authentication for contributors and simulated customer verification are separate mechanisms. Neither automatically grants the permissions of the other.
+Django authentication for staff and simulated customer verification are separate mechanisms. Neither automatically grants the permissions of the other.
 
-Before implementing restricted retrieval, define the permitted public fields, contributor permissions and customer-facing policy sections. Until classified, internal content is withheld from public responses.
+Before implementing restricted retrieval, define the permitted public fields, staff permissions and customer-facing policy sections. Until classified, internal content is withheld from public responses.
 
 All supported operational access is read-only.
 
@@ -74,17 +74,17 @@ Challenge and policy claims require exact page, section or field references befo
 | ID | Requirement | Acceptance criterion | Origin |
 | --- | --- | --- | --- |
 | FR-01 | Respond as the store persona. | Use friendly, informal, professional Portuguese appropriate to the request. | Challenge; Project |
-| FR-02 | Answer contact and opening-hours questions from policy. | Report recorded hours accurately; acknowledge conflicting contact details rather than choosing one silently. | Challenge; Policy |
+| FR-02 | Answer contact and opening-hours questions from policy. | Report recorded hours accurately and apply the [contact-channel decision](#data-and-policy-findings). | Challenge; Policy; Project |
 | FR-03 | Recommend instruments from customer needs and recorded attributes. | Ask for needed preferences; respect the budget using the supported payable price (unique applicable snapshot-active promotional price, otherwise recorded base price), identify the price used, explain supporting attributes and do not invent specifications. | README; Project |
 | FR-04 | Report product prices and availability from matching records. | Apply the [availability table](data-access.md#availability--fr-03-fr-04): only `active` with positive stock is sellable; distinguish temporary stockouts, coming-soon and discontinued items. Suggest only supported available alternatives; public responses omit exact quantities. | Challenge; Data; Project |
 | FR-05 | Report promotions within snapshot limits. | Exclude inactive offers; describe active flags as snapshot records, not proof of current validity. For a unique applicable offer, show recorded base price, discount percentage and calculated price. | Challenge; Data; Project |
 | FR-06 | Answer customer-facing policy questions. | Give applicable conditions and deadlines; ask for missing facts, acknowledge material conflicts and withhold internal procedures. | Challenge; Policy; Project |
-| FR-07 | Provide a protected contributor interface only if selected. | Deny anonymous users; limit authenticated users to permitted information. Test internal procedures and exact stock quantities. | Proposed project extension |
+| FR-07 | Provide a protected staff interface only if selected. | Deny anonymous users; limit authenticated users to permitted information. Test internal procedures and exact stock quantities. | Proposed project extension |
 | FR-08 | Handle out-of-scope requests. | Politely redirect accessory requests: per [policy §1, p. 2](../data/políticas_da_loja.pdf#page=2), accessories are not sold; per [§7.1, p. 6](../data/políticas_da_loja.pdf#page=6), suggest partner stores only when sources support it. Explain other out-of-scope requests politely. | Challenge; Policy |
 | FR-09 | Resist instruction and access-control bypass. | Role claims or instructions in messages, CSV fields or retrieved documents cannot change permissions or expose protected data; legitimate permitted requests remain answerable. | README; Project |
 | FR-10 | Handle missing, ambiguous or conflicting information. | Clarify when needed, state when sources are inconclusive and never invent store-specific facts. Empty or failed lookups cannot support factual claims about the requested data. | README; Project |
 | FR-11 | Minimize customer information exposure. | Return only fields required for an authorized operation; omit unnecessary names, phone numbers, emails and unrelated order details from model inputs, responses and logs. | README; Project |
-| FR-12 | Allow public customer interaction. | Anonymous users may ask permitted questions; claimed contributor status grants no added access. | Project |
+| FR-12 | Allow public customer interaction. | Anonymous users may ask permitted questions; claimed staff status grants no added access. | Project |
 | FR-13 | Restrict order-status access through simulated verification. | Establish a verification context, check order ownership server-side and return permitted fields only. Failed, unavailable or ambiguous verification reveals no order details. | README; Project |
 | FR-14 | Select operational data, policies or both using the current request and conversation context. | Demonstrate the source-selection cases below, preserving relevant constraints and clarifying unresolved references. | [Challenge, p. 1](../desafio_tecnico_ai_eng_artefact.pdf#page=1); Project |
 
@@ -158,14 +158,16 @@ Product records include price, stock, status and specifications. Promotion recor
 
 The policy manual is reported as version 2.1, June 2025, and identifies itself as internal.
 
-The following reported ambiguities require exact source references and explicit handling:
+The following policy interpretations and unresolved questions require explicit handling:
 
 | Finding | Required behavior |
 | --- | --- |
-| Credit-card installment thresholds differ between the summary and detailed rules. | Do not invent a precedence rule or give an unsupported installment calculation. |
-| Defect-exchange and warranty sections describe potentially conflicting deadlines and routes. | Explain the source ambiguity and avoid definitive eligibility decisions based on conflicting text. |
-| Contact details differ across sections. | Acknowledge the discrepancy; do not silently select a preferred contact. |
-| Metropolitan delivery charges distinguish amounts above and below R$500 but leave exactly R$500 unclear. | Identify the missing boundary rule rather than infer a fee. |
+| Project decision: [§3.1, p. 3](../data/políticas_da_loja.pdf#page=3) details §3's credit-card summary; their installment thresholds are not treated as a contradiction. | Apply §3.1's interest-free tiers: up to 3 installments subject to the stated below-R$50 exception; 4–6 installments require at least R$80 each; 7–12 require at least R$100 each. Do not apply the summary's R$100 minimum across all tiers. |
+| The cheapest [product](../data/desafio_tecnico_ai_eng%20-%20products.csv), including snapshot-active promotions, is product 119 at R$159.90. The lowest [order total](../data/desafio_tecnico_ai_eng%20-%20orders.csv) is also R$159.90; order 7 records 3 installments of R$53.30. | The below-R$50 exception does not affect 1–3 installment answers for the supplied data and is not an implementation blocker. Do not request clarification for these supported amounts. Recheck this conclusion when canonical prices, promotions or order totals change. |
+| Historical orders 9 (R$349.90 / 6), 16 (R$429.90 / 6) and 18 (R$459.90 / 12) have installment amounts below §3.1's respective R$80/R$100 minimums. | Report these fixture-policy discrepancies administratively; preserve recorded totals and payment methods and allow import when structural validation passes. Historical terms do not authorize equivalent new installment offers. Existing order-access and field restrictions still apply. |
+| The [30-day defect-exchange period (§4.2, p. 4)](../data/políticas_da_loja.pdf#page=4) starts at purchase; the [90-day warranty (§8.1, p. 7)](../data/políticas_da_loja.pdf#page=7) starts at receipt. The unresolved question is how store mediation after the exchange window handles claims within the 90-day warranty. | Report both periods and §4.2's stated route: contact the manufacturer; store mediation is available on request. Seek store clarification for unspecified mediation details; the different periods alone do not establish a conflict or justify refusing supported guidance. |
+| Project decision: [§7, p. 6](../data/políticas_da_loja.pdf#page=6) identifies (67) 3321-4500 as the primary remote-service WhatsApp channel; [§1.2, p. 2](../data/políticas_da_loja.pdf#page=2) lists (67) 3341-4444 as the company telephone/WhatsApp contact. | Use (67) 3321-4500 for WhatsApp support and store-contact fallbacks, including failed verification. Retain (67) 3341-4444 as the listed company telephone/WhatsApp contact. Label both by their source roles when explaining the difference; these numbers alone do not trigger conflict or refusal. |
+| [§5.1, p. 4](../data/políticas_da_loja.pdf#page=4) specifies free metropolitan delivery above R$500 and R$35 below R$500; equality is a missing boundary rule, not a contradiction. None of the 20 recorded orders or product-price combinations reaches exactly R$500, including snapshot-active promotions and the permitted PIX discount. | Apply the stated fees to supported amounts; the missing equality rule does not block current data scenarios or require clarification for them. For an explicit hypothetical R$500 order, explain that the fee is unspecified and seek store clarification. Recheck reachability when canonical prices, promotions, discount rules or order totals change. |
 
 These findings describe supplied policy text; they do not establish legal conclusions.
 
@@ -175,17 +177,20 @@ Each test or evaluation case must reference the requirement IDs it checks and id
 
 | Coverage | Minimum cases |
 | --- | --- |
-| Persona and contact — FR-01, FR-02 | Portuguese response; recorded hours; conflicting contact details. |
+| Persona and contact — FR-01, FR-02 | Portuguese response; recorded hours; primary WhatsApp support uses (67) 3321-4500; company telephone/WhatsApp listing retains (67) 3341-4444; explain both source roles when asked about the difference without treating it as an unresolved conflict. |
+| Installments — FR-06 | Apply §3.1 at the 3/4 and 6/7 installment boundaries; permit R$480 in 6 installments of R$80; reject 7 installments of R$80; order 7 supports 3 installments of R$53.30 without clarification about the R$50 exception. |
+| Historical installment discrepancies — FR-06, NFR-04 | Import orders 9, 16 and 18 unchanged with administrative discrepancy reporting; preserve structural validation; do not use historical payment terms to justify offers below §3.1's tier minimums or expand permitted order fields. |
 | Recommendations and products — FR-03, FR-04 | Suitable recommendation; missing preferences; base-price budget constraint; snapshot-active promotional price within budget despite base price exceeding it; all availability-table combinations; products 136 (`discontinued`, 13), 130 (`coming_soon`, 2), 96 (`active`, 0); unknown/invalid availability inputs; ambiguous product name. Explanations identify the amount used for budget filtering. |
 | Promotions — FR-05 | Inactive flag; snapshot-active flag; decimal calculation and rounding; conflicting promotions; no promotion stacking or PIX discount on promotional prices. Preserve ambiguity when multiple promotions apply. |
-| Policies — FR-06, NFR-06 | Supported rule; missing facts; conflicting deadlines; exactly R$500 delivery boundary; attempted internal-procedure disclosure. |
+| Policies — FR-06, NFR-06 | Supported rule; missing facts; distinct 30-day exchange and 90-day warranty periods and start dates; stated post-exchange route with unspecified mediation details; no conflict or refusal based solely on those periods; attempted internal-procedure disclosure. |
+| Metropolitan delivery — FR-06, NFR-01 | R$35 below R$500; free above R$500; current orders and supported product-price combinations avoid equality and require no boundary clarification. An explicit hypothetical R$500 order receives an unspecified-fee explanation and store-clarification route, without an invented charge or contradiction claim. |
 | Source selection and context — FR-14, FR-10, NFR-01 | All [observable source-selection cases](#observable-source-selection-cases), checking consulted sources and lookup outcomes as well as answer correctness. |
-| Public and contributor access — FR-07, FR-12, NFR-02 | Anonymous public access; contributor-interface denial; permitted contributor; authenticated user without permission. Contributor cases apply only if selected. |
+| Public and staff access — FR-07, FR-12, NFR-02 | Anonymous public access; staff-interface denial; permitted staff; authenticated user without permission. staff cases apply only if selected. |
 | Scope and uncertainty — FR-08, FR-10 | Unrelated request; accessory request handled per policy; absent information; conflicting sources. |
 | Adversarial behavior — FR-09 | Role impersonation; instruction override; malicious retrieved content; legitimate request following a rejected attack. |
 | Data boundaries — FR-11, NFR-03 | Permitted fields only in model inputs, responses and logs; no verification codes in those channels. |
 | Data version — NFR-04 | Answers reflect canonical CSV values; source/import timing is identified where available; no claim of live synchronization with external operational systems. |
-| Order verification — FR-13 | Successful verification; different verified customer; invalid, expired and reused codes; issuance and attempt limits; session binding and expiry; failed or unavailable verification; ambiguous match; missing tracking data; non-enumerating failures. |
+| Order verification — FR-13 | Successful verification; different verified customer; invalid, expired and reused codes; issuance and attempt limits; session binding and expiry; failed or unavailable verification offers WhatsApp support at (67) 3321-4500 without order disclosure; ambiguous match; missing tracking data; non-enumerating failures. |
 | Reproducibility — NFR-05 | Clean setup using the completed README and documented fixtures. |
 
 For adversarial and unsupported requests, success means the expected refusal, clarification or safe handling—not completion of the requested attack.
@@ -211,8 +216,8 @@ For each case, capture the consulted source types, operation outcomes and suppor
 
 Before the relevant implementation begins:
 
-- Confirm whether contributor access is included in the prototype.
-- Define public fields, contributor permissions and policy-disclosure boundaries.
+- Confirm whether staff access is included in the prototype.
+- Define public fields, staff permissions and policy-disclosure boundaries.
 - Add exact source locators for challenge and policy claims.
 - Choose verification limits and record them as configuration.
 - Select and justify the agent, model and provider.

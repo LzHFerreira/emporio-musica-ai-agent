@@ -1,6 +1,6 @@
 # Data-access design
 
-Status: proposed design, pending review. No implementation or validation is claimed. This design follows [requirements](requirements.md); customer order verification is required, while contributor access remains optional.
+Status: proposed design, pending review. No implementation or validation is claimed. This design follows [requirements](requirements.md); customer order verification is required, while staff access remains optional.
 
 ## Decision
 
@@ -14,6 +14,8 @@ Import canonical project CSVs with a repeatable management command. Parse header
 
 Report invalid records and fail the import transaction rather than silently skipping them or publishing partial data. Re-importing an unchanged fixture must not duplicate records. Imports are an administrative operation, unavailable to conversational tools. Document any normalization separately from source corrections.
 
+Historical installment-policy discrepancies ([orders 9, 16 and 18](requirements.md#data-and-policy-findings)) produce administrative warnings, not import failures when structural validation passes. Preserve their recorded totals and payment methods; do not recalculate them from current policy or use them to justify new installment offers. This does not expand model-facing order fields.
+
 Link products to categories, promotions to products, orders to customers, and items to orders and products. Validate order-item identity at import; do not assume an undocumented composite key or reconstruct historical totals from current prices, since no historical unit price is supplied.
 
 ## Access contracts
@@ -26,13 +28,13 @@ The server derives access context from the Django request and server-side verifi
 | Product details | Product ID | Same public fields and applicable promotion result | Public |
 | Promotion lookup | Product ID | Snapshot-active offer, original price, percentage, calculated price or explicit ambiguity | Public |
 | Public policy lookup | Topic or question | Only classified customer-facing passages and source locators | Public |
-| Stock lookup | Product ID | Exact recorded quantity and status | Contributor permission, if selected |
-| Internal policy lookup | Topic or question | Passages classified for the assigned permission | Contributor permission, if selected |
+| Stock lookup | Product ID | Exact recorded quantity and status | staff permission, if selected |
+| Internal policy lookup | Topic or question | Passages classified for the assigned permission | staff permission, if selected |
 | Request verification | Candidate order/customer locator | Generic acknowledgement; no existence confirmation | Public, rate limited |
 | Submit verification | Code through a dedicated application flow | Success/failure and server-side session-bound verification state | Rate limited |
 | Order status | Order ID | Status and relevant available tracking/estimated-delivery fields | Verified customer owns order |
 
-Permission labels such as `view_exact_stock` and `view_internal_policy` are proposed logical capabilities; final Django permission names and assignment remain to be defined. Contributor authentication alone does not grant customer-order access.
+Permission labels such as `view_exact_stock` and `view_internal_policy` are proposed logical capabilities; final Django permission names and assignment remain to be defined. staff authentication alone does not grant customer-order access.
 
 Return structured outcomes (found, not found, ambiguous, unavailable, denied); map existence-revealing outcomes to one public failure response. Use explicit public-field allowlists, never full model serialization. Bound results and input lengths; set limits before implementation.
 
@@ -63,7 +65,7 @@ Promotion arithmetic uses Decimal and the requirements' half-up rounding. Do not
 
 Store reviewed policy passages with page/section, topic, audience and conflict marker. Public lookup initially allows reviewed customer-facing contact, hours, payment, exchange/return, delivery, promotion and warranty passages; internal workflows and unclassified text are excluded.
 
-Start with topic mapping and text search; filter by audience before ranking or model delivery. Keep conflicting passages with conflict markers; never choose silently, and return the manual version. Treat retrieved instructions as untrusted.
+Start with topic mapping and text search; filter by audience before ranking or model delivery. Apply the [documented policy interpretations](requirements.md#data-and-policy-findings); keep unresolved conflicting passages with conflict markers and return the manual version. The two listed store numbers follow the approved contact-channel mapping, without an automatic conflict marker. Treat retrieved instructions as untrusted.
 
 ## Order verification boundary
 
@@ -71,7 +73,7 @@ Customer and order tables are accessible only through narrowly scoped services. 
 
 Deliver simulated SMS only through a separate development-only reviewer channel, associated with the stored synthetic phone number. Never return codes or full contact details in chat, model context or ordinary logs. Do not enable the simulator as production authentication. Its association with the customer is an explicit synthetic-fixture assumption.
 
-Scope the order query to the server-verified customer and requested order ID in the same query. Return only requested status and relevant tracking/delivery fields, excluding notes, payment details, totals and customer contacts. Clear expired verification state. Unsupported or failed verification leads to a generic explanation and an approved store-contact route; unresolved contact conflicts must remain explicit.
+Scope the order query to the server-verified customer and requested order ID in the same query. Return only requested status and relevant tracking/delivery fields, excluding notes, payment details, totals and customer contacts. Clear expired verification state. Unsupported or failed verification leads to a generic explanation and the primary WhatsApp support route from the [contact-channel decision](requirements.md#data-and-policy-findings).
 
 ## Boundaries and provenance
 
@@ -85,7 +87,7 @@ Trace tests to FR-03–FR-13 and NFR-01–NFR-06 as applicable. Cover transactio
 
 ## Decisions to close
 
-- Confirm whether contributor access is included.
+- Confirm whether staff access is included.
 - Review policy passage classification and exact source locators.
 - Confirm promotion applicability and any normalization rules; product availability follows the table above.
 - Set query bounds, verification lifetimes and rate limits.

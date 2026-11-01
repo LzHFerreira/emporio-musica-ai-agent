@@ -21,7 +21,7 @@ The agent is expected to:
 - Handle missing, ambiguous, conflicting, and out-of-scope information.
 - Respect authorization boundaries when accessing customer-specific information.
 
-A protected contributor interface remains under consideration; simulated SMS verification is required for customer-specific order access.
+A protected staff interface remains under consideration; simulated SMS verification is required for customer-specific order access.
 
 ## Technical approach
 
@@ -65,6 +65,21 @@ Under this assumption, the supplied datasets may be used as development and test
 ### Data handling
 
 Follow [actor and access](docs/requirements.md#actors-and-access) and [data minimization](docs/requirements.md#data-minimization) for authentication, verification, ownership, tool exposure and instruction boundaries.
+
+### Reasoning about incomplete or apparently conflicting sources
+
+The [challenge, p. 3](desafio_tecnico_ai_eng_artefact.pdf#page=3), asks for reasonable interpretations, documented assumptions and continued progress when information is incomplete. My approach is to check each rule's scope and the supplied data, record a justified decision, and seek clarification only when the remaining gap affects the answer.
+
+| Case | Reasoning and project decision |
+| --- | --- |
+| Installments | [§3.1, p. 3](data/políticas_da_loja.pdf#page=3) expands §3's summary: apply its tiers rather than a universal R$100 minimum. The below-R$50 exception does not affect current 1–3 installment scenarios: the cheapest product, including active promotions, and the smallest order are R$159.90, or 3 × R$53.30. |
+| Historical payment terms | Orders 9, 16 and 18 fall below §3.1's tier minimums. Preserve these canonical historical records and report administrative warnings when structural validation passes. Their recorded terms do not justify equivalent new installment offers. |
+| Exchanges and warranty | [§4.2, p. 4](data/políticas_da_loja.pdf#page=4) allows defect exchanges within 30 days of purchase; [§8.1, p. 7](data/políticas_da_loja.pdf#page=7) describes a 90-day warranty from receipt. Different remedies and start dates do not establish a contradiction. Explain the stated post-exchange route—manufacturer contact, with store mediation on request—and clarify unspecified mediation details only when needed. |
+| Contact numbers | Use [§7, p. 6](data/políticas_da_loja.pdf#page=6)'s (67) 3321-4500 as primary WhatsApp support, including verification-failure fallbacks. Retain [§1.2, p. 2](data/políticas_da_loja.pdf#page=2)'s (67) 3341-4444 as the listed company telephone/WhatsApp contact. Their stated roles support this mapping without treating either number as invalid. |
+| Metropolitan delivery | [§5.1, p. 4](data/políticas_da_loja.pdf#page=4) specifies R$35 below R$500 and free delivery above it. Equality is omitted, not contradicted. No recorded order or combination of supplied product prices reaches exactly R$500, including active promotions and permitted PIX discounts, so this gap does not block current scenarios. In a real word scenario, to avoid confusion with customer and staff, I would argue with the store that the equality should be included and treat the case as free delivery. |
+
+These are project interpretations of supplied sources, not legal conclusions or claims of live business validation. Recheck the data-dependent conclusions when canonical data or discount rules change. [Requirements and acceptance coverage](docs/requirements.md#data-and-policy-findings) define the resulting behavior; implementation and behavioral validation remain pending.
+
 ## Documentation
 
 - [Requirements](docs/requirements.md) — Functional requirements, assumptions, constraints, and acceptance criteria.
