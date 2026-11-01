@@ -11,7 +11,7 @@ The prototype uses small related CSV datasets as its canonical project sources a
 
 Use SQLite as the application SQL database. The Django models, ORM, management commands and Admin discussed below belong to the initial integration proposal; re-evaluate them against the [WhatsApp channel requirements](../requirements.md#purpose-and-scope) before implementation.
 
-Keep CSVs as versioned canonical project sources. A management command transactionally validates and repeatably imports selected data into SQLite, preserving source IDs and source-file provenance without duplicating unchanged records. In a real-world scenario, the responsible BU owns updating the canonical data. A BU-facing maintenance interface may be implemented if time permits; any such interface must update the canonical source through validation rather than introduce database-only facts.
+Keep the six CSV datasets and policy PDF as versioned canonical sources. A protected staff web interface for their maintenance is required. Validate changes and refresh derived SQLite/policy retrieval data with matching provenance; preserve source IDs and repeatable imports without duplicates. Database-only business edits cannot bypass canonical sources.
 
 Generate the database locally through migrations and the import command; do not commit the database file or SQLite sidecar files. Document the exact setup commands when implemented.
 
@@ -22,7 +22,7 @@ Expose read-only services that enforce permissions, customer ownership and field
 | Alternative | Assessment |
 | --- | --- |
 | Direct CSV or in-memory queries | Feasible at this size, but requires custom handling of joins, validation and lookup behavior that Django models can centralize. |
-| SQLite through Django ORM | Selected: supports relational queries and migrations without a separately managed database service. |
+| SQLite through Django ORM | Under review: relational queries and migrations without a separately managed database service. |
 | PostgreSQL | Adds provisioning and configuration without a demonstrated prototype requirement. Reconsider if deployment or concurrent-write needs justify it. |
 
 ## Consequences

@@ -10,9 +10,17 @@ Django is a backend candidate under review; SQLite remains selected, while its D
 
 **Customer channel:** design for WhatsApp Business, the primary remote channel in [policy §7, p. 6](../data/políticas_da_loja.pdf#page=6). No store website is assumed, per project direction; this is not an explicit claim in the brief. The [brief, p. 2](../desafio_tecnico_ai_eng_artefact.pdf#page=2), permits CLI, notebook, API or simple UI demonstrations, so a live WhatsApp connection is not mandatory for submission.
 
-Target flow: customer WhatsApp message → authenticated channel adapter → application services and permitted data/policy lookup → validated reply through WhatsApp. Evaluate the [WhatsApp Business Platform](https://whatsappbusiness.com/developers/developer-hub/) API integration separately from the backend and agent framework; select direct integration or a provider, and live testing or simulation, before implementation. Define sender-bound conversation state, duplicate-event handling, delivery failures, human escalation and applicable messaging-window/template rules. Transport sender identifiers stay server-side, outside model context and ordinary logs; a claimed phone number or sender identity alone does not authorize an order lookup.
+Customer demonstration: CLI conversation → representative WhatsApp message event → trusted local adapter → shared application services → validated reply and simulated delivery events → CLI. The CLI reproduces text-message structure and lifecycle, not WhatsApp's visual interface. Staff source maintenance uses a separate protected web interface; live provider authentication and delivery remain unverified. See the [detailed interface contracts](interfaces.md).
 
-**Status:** Requirements analysis. No behavioral validation has been completed.
+**Status:** Requirements review in progress; step 1 is not complete. Staff maintenance and channel reproduction require further specification. No implementation or behavioral validation is claimed.
+
+- Order discovery lists only sender-owned order IDs, dates and statuses, newest first with an ID tie-break, five per page. Recheck the unique customer match on each page and ownership on selection; omit notes, payments, totals and contacts.
+- Persist minimized turns, safe summaries, source provenance, opaque sender scope, processed event IDs, validated cached replies, delivery outcomes, rate/cost counters and takeover state across restarts. Revalidate history, authorization and cached replies before reuse; interrupted work is reported, never automatically rerun.
+- A human request or escalation pauses the conversation until an authorized local operator explicitly releases it. Suppress model calls, automated replies and delivery retries, including in-flight drafts. Operator replies obey the same disclosure/minimization checks; release never automatically replays pending messages.
+- Public policies cover contact/hours, payment, promotions, returns/exchanges, delivery/tracking, warranty and privacy rights. Service instructions guide behavior; internal workflow text and unrelated customer information remain withheld.
+- Provisionally limit processing to 60 seconds per received message, including any retry; customer inactivity never expires or locks the local conversation. A timed-out request fails safely without closing the conversation. Allow at most one safe transient retry with bounded backoff/jitter. Require configurable input, context/output-token, model/tool-call, rate and cost ceilings; exhausted limits return a safe failure. Validate the provisional timeout and set remaining numeric budgets in step 2, before model integration ([OWASP](https://genai.owasp.org/llmrisk/llm102025-unbounded-consumption/), [AWS](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/)).
+- Acceptance adds owned-order pagination and cross-customer denial; restart recovery, duplicate replay and source-version revalidation; takeover/release across restarts, in-flight reply suppression and blocked automatic retries; delayed customer replies preserving conversation context; processing timeout/resource failures without closing conversations. Existing functional, privacy and source-selection cases remain mandatory.
+- Traceability: the [brief, p. 1](../desafio_tecnico_ai_eng_artefact.pdf#page=1) supports FR-01/02/04/05/06/08/14 and discretionary dataset use; [p. 2](../desafio_tecnico_ai_eng_artefact.pdf#page=2) defines technical choices and deliverables; [p. 3](../desafio_tecnico_ai_eng_artefact.pdf#page=3) permits documented assumptions. Additional security and channel constraints are project decisions.
 
 ## Working assumptions
 
@@ -24,7 +32,7 @@ Synthetic fixtures do not remove the need to demonstrate application authorizati
 
 ### Canonical data and freshness
 
-For this project, the supplied CSV files are the canonical sources for product, category, customer, order, order-item, and promotion data. The application database is a derived query store populated from those files; it must not become an independent authority. In a real-world scenario, the responsible business unit (BU) owns keeping the canonical CSVs current. If time permits, the project may engineer a BU-facing interface to review and update this information; otherwise updates remain outside the prototype workflow.
+All six CSV datasets and the policy PDF remain canonical and must be maintainable by authorized staff through a protected web interface. Derived query/retrieval data must reflect validated source versions; direct database-only edits cannot become independent business facts.
 
 Answers must reflect the canonical project sources and may describe their values as current for the project data version in use. The prototype does not claim live synchronization with external operational systems. A promotion's active flag is authoritative for the project data version; no date-based validity is implied because the source contains no validity dates.
 
@@ -42,16 +50,16 @@ The assistant supports:
 6. Attempts to override instructions or access restrictions.
 7. Customer-specific order-status questions after channel-appropriate verification and ownership checks.
 
-### Proposed extensions
+### Required staff workflow and deferred extensions
 
-A protected staff interface for internal procedures and exact stock quantities remains an optional project extension. Its requirements below apply only if selected; it is not a challenge baseline requirement.
+A protected staff web interface for maintaining all six CSV datasets and the policy PDF is required project scope. Additional conversational staff tools for internal procedures and exact stock remain separate future scope.
 
-Real SMS delivery, production identity verification, account recovery, purchases, order changes, and direct conversational writes to stock or price are outside the prototype scope. A BU-facing source-maintenance interface is a possible time-permitting extension.
+Real SMS delivery, production identity verification, account recovery, customer-initiated purchases/order changes, complaint-ticket creation and customer conversational business-data writes are excluded. Authorized staff source maintenance is required; no live human-transfer integration is claimed.
 
 ## Actors and access
 
 - **Public client:** may access public store information, product prices and availability, recommendations and customer-facing policies without signing in.
-- **staff, if implemented:** uses application authentication and explicitly assigned permissions to access restricted operational information; Django authentication remains a candidate.
+- **Staff maintainer:** authenticates through the protected web interface and needs explicit source-maintenance permissions for canonical CSV/PDF changes; customer and operator identities grant no staff permissions. Django authentication remains a candidate.
 - **Verified customer context:** grants temporary, narrowly scoped access to orders belonging to the corresponding synthetic customer.
 
 A role or identity claimed in a message grants no permission.
@@ -60,7 +68,7 @@ Staff authentication and customer verification are separate mechanisms. Neither 
 
 Before implementing restricted retrieval, define the permitted public fields, staff permissions and customer-facing policy sections. Until classified, internal content is withheld from public responses.
 
-All supported operational access is read-only.
+Customer conversational access is read-only. Authenticated, explicitly authorized staff may modify canonical sources only through the separate maintenance workflow; customer/model inputs cannot invoke it.
 
 ## Requirement provenance
 
@@ -80,10 +88,10 @@ Challenge and policy claims require exact page, section or field references befo
 | FR-01 | Respond as the store persona. | Use friendly, informal, professional Portuguese appropriate to the request. | Challenge; Project |
 | FR-02 | Answer contact and opening-hours questions from policy. | Report recorded hours accurately and apply the [contact-channel decision](#data-and-policy-findings). | Challenge; Policy; Project |
 | FR-03 | Recommend instruments from customer needs and recorded attributes. | Ask for needed preferences; respect the budget using the supported payable price for the requested payment method under the rules below; identify the amount and payment condition used, explain supporting attributes and do not invent specifications. | README; Project |
-| FR-04 | Report product prices and availability from matching records. | Apply the [availability table](data-access.md#availability--fr-03-fr-04): only `active` with positive stock is sellable; distinguish temporary stockouts, coming-soon and discontinued items. Suggest only supported available alternatives; public responses omit exact quantities. | Challenge; Data; Project |
+| FR-04 | Report product prices and availability using customer-facing product references. | Resolve names, brands, models, descriptions or prior choices. Internal product IDs are never requested, used as customer lookup inputs or exposed to customers. Apply the [availability table](data-access.md#availability--fr-03-fr-04): only `active` with positive stock is sellable; distinguish stockouts, coming-soon and discontinued items. Suggest supported available alternatives; omit exact quantities. | Challenge; Data; Project |
 | FR-05 | Report promotions within snapshot limits. | Exclude inactive offers; describe active flags as snapshot records, not proof of current validity. For a unique applicable offer, show recorded base price, discount percentage and calculated price. | Challenge; Data; Project |
 | FR-06 | Answer customer-facing policy questions. | Give applicable conditions and deadlines; ask for missing facts, acknowledge material conflicts and withhold internal procedures. | Challenge; Policy; Project |
-| FR-07 | Provide a protected staff interface only if selected. | Deny anonymous users; limit authenticated users to permitted information. Test internal procedures and exact stock quantities. | Proposed project extension |
+| FR-07 | Provide protected staff maintenance for all six CSV datasets and the policy PDF. | Require authentication and explicit permissions; validate and preview changes, publish consistent source/query versions, audit and recover failures per the [interface contract](interfaces.md#staff-source-maintenance). | Required project scope |
 | FR-08 | Handle out-of-scope requests. | Politely redirect accessory requests: per [policy §1, p. 2](../data/políticas_da_loja.pdf#page=2), accessories are not sold; per [§7.1, p. 6](../data/políticas_da_loja.pdf#page=6), suggest partner stores only when sources support it. Explain other out-of-scope requests politely. | Challenge; Policy |
 | FR-09 | Resist instruction and access-control bypass. | Role claims or instructions in messages, CSV fields or retrieved documents cannot change permissions or expose protected data; legitimate permitted requests remain answerable. | README; Project |
 | FR-10 | Handle missing, ambiguous or conflicting information. | Clarify when needed, state when sources are inconclusive and never invent store-specific facts. Empty or failed lookups cannot support factual claims about the requested data. | README; Project |
@@ -132,7 +140,8 @@ The following acceptance cases define the required interaction; accepting text g
 | Input or retained turn | Expected result |
 | --- | --- |
 | Customer: “Quero um violão até R$1.000”; “Meu orçamento é R$123.456,00.” | Accept both budgets. |
-| Customer: “Quanto custa o produto 101?”; “Vocês têm o AC-39?” | Accept product identifiers; use normal lookup and uncertainty handling. |
+| Customer: “Quanto custa o Takamine GD20?”; “Vocês têm o AC-39?” | Accept product names and manufacturer model codes; use normal lookup and uncertainty handling. |
+| Unsupported reference: “Quanto custa o produto 101?” | Ask for the product name, brand or model; do not look up or confirm an internal product ID. |
 | Customer: “Qual o status do pedido 7?”; “E o pedido 123456?” | Accept order identifiers; require verification and ownership before disclosure. |
 | Customer: “123456” | Accept ingress; clarify the intended meaning without changing sender identity. |
 | Customer: “Meu telefone é (11) 98765-4321”; “Meu email é cliente@example.com.” | Remove unnecessary contact spans before model use/retention; ask how to help without echoing contacts or changing the authenticated sender. |
@@ -195,7 +204,7 @@ Each test or evaluation case must reference the requirement IDs it checks and id
 | Coverage | Minimum cases |
 | --- | --- |
 | Persona and contact — FR-01, FR-02 | Portuguese response; recorded hours; primary WhatsApp support uses (67) 3321-4500; company telephone/WhatsApp listing retains (67) 3341-4444; explain both source roles when asked about the difference without treating it as an unresolved conflict. |
-| WhatsApp channel — FR-11, FR-12, FR-13, NFR-02, NFR-03 | Demonstrate inbound message → permitted lookup → outbound reply; reject forged channel events; isolate senders; handle duplicates, delivery failures and human escalation. Define verification and messaging-window cases before implementation; label simulated transport and identity limits explicitly. |
+| WhatsApp channel — FR-11, FR-12, FR-13, NFR-02, NFR-03 | Exercise the [CLI/event contracts](interfaces.md#message-and-delivery-contracts): interleaved senders; malformed, forged, batched and conflicting/duplicate events; scoped reply references; restart/interruption; delayed replies; repeated/out-of-order statuses; failed/unknown delivery; takeover races and release without backlog replay. Live signatures and messaging-window/template compliance remain outside local validation. |
 | Installments — FR-06 | Apply §3.1 at the 3/4 and 6/7 installment boundaries; permit R$480 in 6 installments of R$80; reject 7 installments of R$80; order 7 supports 3 installments of R$53.30 without clarification about the R$50 exception. |
 | Historical installment discrepancies — FR-06, NFR-04 | Import orders 9, 16 and 18 unchanged with administrative discrepancy reporting; preserve structural validation; do not use historical payment terms to justify offers below §3.1's tier minimums or expand permitted order fields. |
 | Recommendations and products — FR-03, FR-04 | Suitable recommendation; missing preferences; base-price budget constraint; snapshot-active promotional price within budget despite base price exceeding it; all availability-table combinations; products 136 (`discontinued`, 13), 130 (`coming_soon`, 2), 96 (`active`, 0); unknown/invalid availability inputs; ambiguous product name. Explanations identify the amount used for budget filtering. |
@@ -204,7 +213,7 @@ Each test or evaluation case must reference the requirement IDs it checks and id
 | Policies — FR-06, NFR-06 | Supported rule; missing facts; distinct 30-day exchange and 90-day warranty periods and start dates; stated post-exchange route with unspecified mediation details; no conflict or refusal based solely on those periods; attempted internal-procedure disclosure. |
 | Metropolitan delivery — FR-06, NFR-01 | R$35 below R$500; free above R$500; current orders and supported product-price combinations avoid equality and require no boundary clarification. An explicit hypothetical R$500 order receives an unspecified-fee explanation and store-clarification route, without an invented charge or contradiction claim. |
 | Source selection and context — FR-14, FR-10, NFR-01 | All [observable source-selection cases](#observable-source-selection-cases), checking consulted sources and lookup outcomes as well as answer correctness. |
-| Public and staff access — FR-07, FR-12, NFR-02 | Anonymous public access; staff-interface denial; permitted staff; authenticated user without permission. staff cases apply only if selected. |
+| Public and staff access — FR-07, FR-12, NFR-02 | Public customer access; deny anonymous and unauthorized staff writes; exercise all six CSVs and PDF maintenance, validation, classification, publication failure/recovery, stale edits and rollback under the [interface contract](interfaces.md#staff-source-maintenance). |
 | Scope and uncertainty — FR-08, FR-10 | Unrelated request; accessory request handled per policy; absent information; conflicting sources. |
 | Adversarial behavior — FR-09 | Role impersonation; instruction override; malicious retrieved content; legitimate request following a rejected attack. |
 | Data boundaries — FR-11, NFR-03 | Permitted fields only in model inputs, responses and logs; no transport sender metadata, customer-matching details or removed personal-contact spans in those channels. |
@@ -237,9 +246,7 @@ For each case, capture the consulted source types, operation outcomes and suppor
 
 Before the relevant implementation begins:
 
-- Confirm whether staff access is included in the prototype.
-- Define public fields, staff permissions and policy-disclosure boundaries.
-- Add exact source locators for challenge and policy claims.
+- Finalize concrete field/specification projections and reviewed policy passages within the accepted disclosure boundary.
 - Define sender-number normalization, customer binding and order-access rate limits; record them as configuration.
 - Select and justify the agent, model and provider.
 

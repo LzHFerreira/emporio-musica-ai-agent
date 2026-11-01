@@ -1,6 +1,6 @@
 # Data-access design
 
-Status: design pending implementation; no behavioral validation is claimed. The accepted customer boundary uses authenticated WhatsApp sender metadata, a unique stored-customer match and order ownership checks ([requirements](requirements.md#order-verification)); no SMS or verification form is required. Django integration remains under review; staff access remains optional.
+Status: requirements review in progress; step 1 is not complete and no behavioral validation is claimed. Customer events come from a trusted synthetic-sender harness; authenticated WhatsApp metadata below denotes the future contract and its simulated equivalent. Staff maintenance of all CSVs and the policy PDF through a protected web interface is required; Django integration remains under review.
 
 ## Decision
 
@@ -10,7 +10,7 @@ No vector database, embeddings or agent framework is required for this design. R
 
 ## Source preparation
 
-Import canonical project CSVs with a repeatable management command. Parse headers explicitly; validate required IDs, uniqueness, foreign keys, dates, nonnegative prices/stock, promotion percentages/flags and specification JSON. Use Decimal for money and explicit order-date formats, not locale inference. Preserve source IDs and source-file provenance. A future BU-facing interface, if time permits, must update the canonical source data through a validated workflow; it must not create database-only business facts.
+A protected staff web interface must maintain all six canonical CSV datasets and the policy PDF. Validate IDs, relationships, explicit dates, nonnegative values, promotion flags/percentages and specification JSON; use Decimal and preserve source provenance. Validate/classify replacement policy content before public retrieval. Publish consistent source/query versions with safe failure recovery; customer tools cannot write business data.
 
 Report invalid records and fail the import transaction rather than silently skipping them or publishing partial data. Re-importing an unchanged fixture must not duplicate records. Imports are an administrative operation, unavailable to conversational tools. Document any normalization separately from source corrections.
 
@@ -24,13 +24,15 @@ The server derives customer context from authenticated transport sender metadata
 
 | Operation | Inputs | Permitted result | Gate |
 | --- | --- | --- | --- |
-| Search catalog | Text, category, maximum price, optional requested payment method, availability filter, bounded page | Product ID, name, description, selected specifications, category, recorded base price, supported payable price, payment condition, pricing source locators and availability | Public |
-| Product details | Product ID, optional requested payment method | Same public fields and applicable promotion result | Public |
-| Promotion lookup | Product ID | Snapshot-active offer, original price, percentage, calculated price or explicit ambiguity | Public |
+| Search catalog | Name, brand, model, description, category, maximum price, optional payment method, availability filter, bounded page | Name, description, selected specifications, category, base/payable prices, payment condition, customer-facing source labels and availability; product keys stay in separate internal metadata | Public |
+| Product details | Name/model or prior conversational choice resolved internally; optional payment method | Same customer-facing fields and applicable promotion result; no product ID | Public |
+| Promotion lookup | Internally resolved product key; never a customer-supplied product ID | Snapshot-active offer, original price, percentage, calculated price or explicit ambiguity | Public |
 | Public policy lookup | Topic or question | Only classified customer-facing passages and source locators | Public |
 | Stock lookup | Product ID | Exact recorded quantity and status | staff permission, if selected |
 | Internal policy lookup | Topic or question | Passages classified for the assigned permission | staff permission, if selected |
 | Resolve customer context | Sender number from an authenticated channel event | Internal customer scope only; no customer record or match result to the model | Trusted adapter, unique normalized match, rate limited |
+| List own orders | Bounded page; no caller-supplied customer ID | Owned order IDs, dates and statuses; five per page, newest first with ID tie-break | Rechecked sender/customer scope on every page |
+| Maintain sources | Reviewed CSV record/file or PDF changes through protected staff web interface | Validated canonical version, matching derived snapshot, audit outcome or explicit errors | Authenticated staff with explicit maintenance permissions; never a conversational tool |
 | Order status | Order ID | Status and relevant available tracking/estimated-delivery fields | Verified customer owns order |
 
 Permission labels such as `view_exact_stock` and `view_internal_policy` are proposed logical capabilities; final Django permission names and assignment remain to be defined. staff authentication alone does not grant customer-order access.
@@ -39,7 +41,7 @@ Return structured outcomes (found, not found, ambiguous, unavailable, denied); m
 
 ## Catalog and recommendations
 
-Filter in the database, including budget and the availability table below. Clarify ambiguous names or return bounded candidates. Hide exact stock in public projections.
+Resolve customer references by name, brand, model, description or prior conversational choice; clarify ambiguous matches with descriptive candidates. Product IDs are internal keys for joins, tooling and technical evidence: never ask customers for them, interpret customer numbers as database IDs, or expose them in replies, transcripts or customer-facing source references. Use product names and source versions for public provenance. Filter budget/availability in the database and hide exact stock in public projections.
 
 ### Availability — FR-03, FR-04
 
@@ -62,7 +64,7 @@ Promotion and PIX arithmetic use Decimal and the requirements' half-up rounding 
 
 ## Policy access
 
-Store reviewed policy passages with page/section, topic, audience and conflict marker. Public lookup initially allows reviewed customer-facing contact, hours, payment, exchange/return, delivery, promotion and warranty passages; internal workflows and unclassified text are excluded.
+Store reviewed policy passages with page/section, topic, audience and conflict marker. Public lookup allows customer-facing contact, hours, payment, exchange/return, delivery, promotion, warranty and privacy passages. Internal workflows and unclassified text are excluded.
 
 Start with topic mapping and text search; filter by audience before ranking or model delivery. Apply the [documented policy interpretations](requirements.md#data-and-policy-findings); keep unresolved conflicting passages with conflict markers and return the manual version. The two listed store numbers follow the approved contact-channel mapping, without an automatic conflict marker. Treat retrieved instructions as untrusted.
 
@@ -86,13 +88,12 @@ Model-facing tools call these services and receive only their permitted projecti
 
 ## Verification before implementation completion
 
-Trace tests to FR-03–FR-13 and NFR-01–NFR-06 as applicable. Cover transactional import failure and repeatability; public field allowlists; budget and availability filtering; promotion rounding and ambiguity; public policy filtering before ranking; direct unauthorized service calls; forged channel events; missing, unmatched or duplicate phone bindings; normalization and mapping changes; cross-customer order requests; non-enumerating failures and absent sender/matching details in model inputs/logs.
+Trace tests to FR-03–FR-14 and NFR-01–NFR-07 as applicable. Cover import failure/repeatability, permitted projections, pricing/availability, scoped customer matching/ownership and safe telemetry. Exercise required staff source maintenance and customer CLI event/replay/takeover behavior against the [interface contracts](interfaces.md).
 
 ## Decisions to close
 
-- Confirm whether staff access is included.
 - Review policy passage classification and exact source locators.
 - Confirm promotion applicability and any normalization rules; product availability follows the table above.
 - Set query bounds, sender-number normalization, customer binding and order-access rate limits.
 - Define validated source-update and import/reconciliation semantics, including handling of records removed from canonical CSVs; assign BU ownership of source maintenance for any real-world deployment.
-- Define the WhatsApp adapter and trusted demonstration harness; select backend and model integration against the accepted sender-authentication contract.
+- Implement the [local message/event contracts](interfaces.md#message-and-delivery-contracts); select backend/model integration and pin reviewed representative fixtures. Live WhatsApp adapter validation remains future scope.

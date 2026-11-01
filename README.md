@@ -21,7 +21,7 @@ The agent is expected to:
 - Handle missing, ambiguous, conflicting, and out-of-scope information.
 - Respect authorization boundaries when accessing customer-specific information.
 
-A protected staff interface remains under consideration. Customer-specific order access uses the authenticated WhatsApp sender number, a unique stored customer match and server-side ownership checks; no SMS verification is required.
+The submission requires a local customer CLI reproducing WhatsApp message/event contracts, persistent conversation state and operator takeover, plus a protected staff web interface maintaining all six CSV datasets and the policy PDF. Live WhatsApp authentication and delivery remain unverified. See the [interface contracts](docs/interfaces.md).
 
 ## Technical approach
 
@@ -30,16 +30,16 @@ Python is the only technology mandated by the challenge. Other choices will be j
 | Concern | Initial decision |
 |---|---|
 | Language | Python |
-| Customer interface | WhatsApp Business; no customer website assumed |
+| Customer interface | Local CLI demonstration; future WhatsApp adapter |
 | Backend framework | Under review; Django remains a candidate |
-| Authentication | WhatsApp sender authentication; optional staff authentication remains under review |
+| Authentication | Trusted synthetic-sender harness; operator controls restricted to the local operator |
 | Authorization | Application-enforced permissions and resource ownership |
 | Agent architecture | Under evaluation |
 | LLM and provider | Under evaluation |
 | Structured data access | SQLite retained; Django ORM integration under review ([ADR-0001](docs/adr/0001-use-sqlite-for-structured-data.md)) |
 | Policy retrieval | Under evaluation |
-| Customer verification | Authenticated sender number → unique customer match → owned orders; no SMS or verification form |
-| Conversation persistence | To be determined |
+| Customer verification | Synthetic sender → unique customer match → owned-order listing and status; no SMS or verification form |
+| Conversation persistence | Permitted conversation, replay, delivery and takeover state survives restarts |
 
 The customer experience follows WhatsApp, the store's primary remote channel ([policy §7, p. 6](data/políticas_da_loja.pdf#page=6)). The [brief, p. 2](desafio_tecnico_ai_eng_artefact.pdf#page=2), permits simpler demonstration interfaces; live WhatsApp integration is not an assignment requirement. A simulator may demonstrate the intended channel contract, with its limits explicit. See the [revised channel requirements](docs/requirements.md#purpose-and-scope).
 
@@ -52,7 +52,7 @@ The challenge provides:
 - Promotion records.
 - An internal store-policy PDF.
 
-For this project, the supplied CSV files are the canonical sources for product, category, customer, order, order-item, and promotion data. In a real-world deployment, the responsible business unit (BU) would own keeping these data up to date; the prototype does not imply live synchronization with operational systems. If time permits, an interface for the BU to review and update this information may be implemented.
+The CSVs and policy PDF remain canonical. Authorized staff maintain these sources through a protected web interface; validated changes update derived query/retrieval data with matching source provenance. Customer conversation tools remain read-only; staff maintenance must not introduce database-only business facts.
 
 ### Synthetic-data assumption
 
@@ -91,7 +91,7 @@ Architecture, technical decisions, and evaluation evidence will be documented as
 
 ## Development roadmap
 
-1. Complete initial requirements analysis and document assumptions.
+1. **In progress:** review requirements, staff source-maintenance workflow and local WhatsApp reproduction; step 1 is not complete.
 2. Select and justify the agent architecture, model, and provider.
 3. Implement a minimal working customer interaction.
 4. Integrate structured data lookups and policy retrieval.
