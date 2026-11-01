@@ -49,7 +49,7 @@ The challenge provides:
 - Promotion records.
 - An internal store-policy PDF.
 
-These files are static snapshots, not live operational systems.
+For this project, the supplied CSV files are the canonical sources for product, category, customer, order, order-item, and promotion data. In a real-world deployment, the responsible business unit (BU) would own keeping these data up to date; the prototype does not imply live synchronization with operational systems. If time permits, an interface for the BU to review and update this information may be implemented.
 
 ### Synthetic-data assumption
 
@@ -62,14 +62,9 @@ This working assumption is based on two elements of the challenge:
 
 Under this assumption, the supplied datasets may be used as development and testing fixtures and included in the public repository to support reproducibility.
 
-This is a documented project assumption, not an independently verified classification or a general authorization to publish third-party data. If contradictory evidence emerges, the assumption and affected repository contents must be reassessed.
-
 ### Data handling
 
-Follow [actor and access](docs/requirements.md#actors-and-access) and [data minimization](docs/requirements.md#data-minimization) for authentication, verification, ownership, tool exposure and instruction boundaries. Never commit credentials or secrets. Classify and authorize production data before sharing it with coding assistants or model providers.
-
-The prototype makes no production-grade privacy or security assurance claim.
-
+Follow [actor and access](docs/requirements.md#actors-and-access) and [data minimization](docs/requirements.md#data-minimization) for authentication, verification, ownership, tool exposure and instruction boundaries.
 ## Documentation
 
 - [Requirements](docs/requirements.md) — Functional requirements, assumptions, constraints, and acceptance criteria.
