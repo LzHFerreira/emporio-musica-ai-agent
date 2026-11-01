@@ -82,10 +82,11 @@ Challenge and policy claims require exact page, section or field references befo
 | FR-07 | Provide a protected contributor interface only if selected. | Deny anonymous users; limit authenticated users to permitted information. Test internal procedures and exact stock quantities. | Proposed project extension |
 | FR-08 | Handle out-of-scope requests. | Politely redirect accessory requests: per [policy §1, p. 2](../data/políticas_da_loja.pdf#page=2), accessories are not sold; per [§7.1, p. 6](../data/políticas_da_loja.pdf#page=6), suggest partner stores only when sources support it. Explain other out-of-scope requests politely. | Challenge; Policy |
 | FR-09 | Resist instruction and access-control bypass. | Role claims or instructions in messages, CSV fields or retrieved documents cannot change permissions or expose protected data; legitimate permitted requests remain answerable. | README; Project |
-| FR-10 | Handle missing, ambiguous or conflicting information. | Clarify when needed, state when sources are inconclusive and never invent store-specific facts. | README; Project |
+| FR-10 | Handle missing, ambiguous or conflicting information. | Clarify when needed, state when sources are inconclusive and never invent store-specific facts. Empty or failed lookups cannot support factual claims about the requested data. | README; Project |
 | FR-11 | Minimize customer information exposure. | Return only fields required for an authorized operation; omit unnecessary names, phone numbers, emails and unrelated order details from model inputs, responses and logs. | README; Project |
 | FR-12 | Allow public customer interaction. | Anonymous users may ask permitted questions; claimed contributor status grants no added access. | Project |
 | FR-13 | Restrict order-status access through simulated verification. | Establish a verification context, check order ownership server-side and return permitted fields only. Failed, unavailable or ambiguous verification reveals no order details. | README; Project |
+| FR-14 | Select operational data, policies or both using the current request and conversation context. | Demonstrate the source-selection cases below, preserving relevant constraints and clarifying unresolved references. | [Challenge, p. 1](../desafio_tecnico_ai_eng_artefact.pdf#page=1); Project |
 
 ### Promotion rules
 
@@ -178,6 +179,7 @@ Each test or evaluation case must reference the requirement IDs it checks and id
 | Recommendations and products — FR-03, FR-04 | Suitable recommendation; missing preferences; base-price budget constraint; snapshot-active promotional price within budget despite base price exceeding it; all availability-table combinations; products 136 (`discontinued`, 13), 130 (`coming_soon`, 2), 96 (`active`, 0); unknown/invalid availability inputs; ambiguous product name. Explanations identify the amount used for budget filtering. |
 | Promotions — FR-05 | Inactive flag; snapshot-active flag; decimal calculation and rounding; conflicting promotions; no promotion stacking or PIX discount on promotional prices. Preserve ambiguity when multiple promotions apply. |
 | Policies — FR-06, NFR-06 | Supported rule; missing facts; conflicting deadlines; exactly R$500 delivery boundary; attempted internal-procedure disclosure. |
+| Source selection and context — FR-14, FR-10, NFR-01 | All [observable source-selection cases](#observable-source-selection-cases), checking consulted sources and lookup outcomes as well as answer correctness. |
 | Public and contributor access — FR-07, FR-12, NFR-02 | Anonymous public access; contributor-interface denial; permitted contributor; authenticated user without permission. Contributor cases apply only if selected. |
 | Scope and uncertainty — FR-08, FR-10 | Unrelated request; accessory request handled per policy; absent information; conflicting sources. |
 | Adversarial behavior — FR-09 | Role impersonation; instruction override; malicious retrieved content; legitimate request following a rejected attack. |
@@ -191,6 +193,19 @@ For adversarial and unsupported requests, success means the expected refusal, cl
 Use deterministic tests for permissions, ownership, verification state and price calculations. Evaluate generated answers against source facts and explicit behavioral criteria rather than requiring identical wording.
 
 Passing tests support claims only within their recorded coverage. No validation results are claimed at this stage.
+
+### Observable source-selection cases
+
+For each case, capture the consulted source types, operation outcomes and supporting record IDs or policy locators in the evaluation evidence, within the existing data-minimization rules. A correct answer alone does not establish correct source selection; internal model reasoning is not required.
+
+| Case | Expected observable behavior |
+| --- | --- |
+| Catalog only: “Quanto custa o Takamine GD20 e ele está disponível?” | Consult matching catalog and applicable promotion records; do not consult policies. Ground price and public availability in returned records. |
+| Policy only: “Qual é o horário de funcionamento?” | Consult customer-facing policy sections; do not query operational tables. Answer from the identified passage. |
+| Both: “O Takamine GD20 está disponível e quais são as regras de devolução?” | Consult catalog records and customer-facing return policies. Support availability and return conditions with their respective sources; ask for missing eligibility facts. |
+| Follow-up: after two supported recommendations, “E o mais barato?” | Resolve the comparison to those candidates, retain budget and preferences, and use supported payable prices under FR-03. Record the candidate IDs and operational evidence used, including any reuse from the prior turn; no policy lookup is needed. |
+| Unresolved follow-up: “E o mais barato?” without identifiable candidates | Ask which products to compare before querying or asserting a price. Do not invent a referent. |
+| Empty or failed lookup: repeat catalog-only, policy-only and combined requests with empty results and, separately, injected errors/timeouts for each required source | Evidence records the empty/error outcome. State that the affected facts cannot be confirmed; do not invent price, availability or policy, treat an error as absence, or turn missing availability evidence into “unavailable.” In combined requests, independently supported facts may still be answered with the unresolved part explicit. |
 
 ## Decisions still required
 

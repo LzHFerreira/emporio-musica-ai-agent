@@ -121,7 +121,7 @@ The final submission will include:
 
 - A public GitHub repository with meaningful development history.
 - Reproducible execution instructions.
-- Justification of the selected architecture, model, retrieval strategy, and consequential technical decisions.
+- Justification in this README of the selected architecture, model, retrieval strategy, prompt strategy, and consequential technical decisions ([challenge, p. 2](desafio_tecnico_ai_eng_artefact.pdf#page=2)).
 - Known limitations and potential improvements.
 - Three to five recorded agent interactions, including at least one nontrivial data or policy consultation.
 - Documentation of coding-assistant usage.
