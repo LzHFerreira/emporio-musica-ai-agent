@@ -172,14 +172,14 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         self.assertEqual((result["outcome"], result["model_requests"], result["tool_executions"]), ("clarification", 2, 1))
         http.close()
 
-    def test_fenced_json_is_not_repaired_and_unsupported_reply_stays_blocked(self):
+    def test_fenced_json_is_extracted_and_unsupported_reply_stays_blocked(self):
         fenced = 'Resposta:\n```json\n{"outcome":"answer","text":"produto 95 custa R$ 1","reason":null}\n```'
         body = {"choices": [{"message": {"role": "assistant", "content": fenced}, "finish_reason": "stop"}]}
         model, http = _client_for(body)
         with patch("emporio.agent_turn.output_supported", wraps=output_supported) as supported:
             result = run_turn("oi", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
         self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 1, 0))
-        supported.assert_not_called()
+        supported.assert_called_once()
         http.close()
 
     def test_untrusted_control_claim_still_runs_the_existing_output_guard(self):

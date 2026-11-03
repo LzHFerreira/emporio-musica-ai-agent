@@ -32,6 +32,8 @@ def _execute_one(call, messages, sender, model_client, version, handlers, state)
     name, arguments = parsed
     value = _call_handler(name, arguments, sender, model_client, version, handlers, state)
     _record(call, name, value, messages, state)
+    if value.get("outcome") == "found" and arguments.get("max_price_brl"):
+        state["evidence"].append({"data": {"budget": arguments["max_price_brl"]}})
     return True
 
 

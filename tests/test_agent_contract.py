@@ -73,3 +73,22 @@ class AgentTurnContractTests(TestCase):
         self.assertEqual((result["outcome"], result["text"]), ("handoff", "Encaminhei sua conversa para atendimento humano."))
         self.assertNotIn("private draft", result["text"])
         model.assert_called_once()
+
+    def test_live_model_formats_and_searched_budget_are_accepted(self):
+        search = tool_call("search_catalog", {"query": "violão de nylon", "max_price_brl": 1000, "payment_method": "pix", "available_only": True})
+        texts = ('Segue: {"outcome":"answer","text":"Opções até R$ 1.000,00 no PIX. Tagima Memphis AC-39 Nylon Natural: R$ 408,41.","reason":null}', '{"outcome":"answer","text":"Opções até R$ 1.000,00 no PIX. Tagima Memphis AC-39 Nylon Natural: R$ 408,41."}')
+        for text in texts:
+            with self.subTest(text=text):
+                replies = iter([{"tool_calls": [search]}, {"content": text}])
+                result = run_turn("Violão de nylon até mil no pix?", sender="5567998123456", model_client=lambda m, t: next(replies))
+                self.assertIn("Tagima Memphis", result["text"])
+
+    def test_leaked_control_token_fails_closed(self):
+        text = '{"outcome":"answer","text":"Oi <|channel>thought: posso ajudar?","reason":null}'
+        result = run_turn("Oi", sender="5567998123456", model_client=Mock(return_value={"content": text}))
+        self.assertNotIn("<|", result["text"])
+
+    def test_out_of_scope_handoff_does_not_guard_discarded_model_text(self):
+        text = '{"outcome":"handoff","reason":"unsupported","text":"Não vendemos pizza, só instrumentos."}'
+        result = run_turn("Vocês vendem pizza?", sender="5567998123456", model_client=Mock(return_value={"content": text}))
+        self.assertEqual(result["outcome"], "handoff")

@@ -1,6 +1,7 @@
 """Define terminal response validation and fixed customer notices."""
 
 import json
+import re
 from typing import Any
 
 FAILURE_TEXT = (
@@ -52,11 +53,14 @@ SYSTEM_PROMPT = "\n".join(
 
 
 def terminal(content: Any) -> dict[str, Any] | None:
-    """Parse one exact terminal JSON object with bounded customer text."""
+    """Parse the last terminal JSON object; answers may omit a null reason."""
+    starts = [m.start() for m in re.finditer(r'\{\s*"outcome"', content or "")]
     try:
-        value = json.loads(content)
-    except (TypeError, json.JSONDecodeError):
+        value = json.JSONDecoder().raw_decode(content, starts[-1])[0]
+    except (TypeError, IndexError, json.JSONDecodeError):
         return None
+    if isinstance(value, dict) and value.get("outcome") != "handoff":
+        value.setdefault("reason", None)
     return value if _terminal_valid(value) else None
 
 

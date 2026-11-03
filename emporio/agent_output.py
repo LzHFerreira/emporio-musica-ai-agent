@@ -82,6 +82,7 @@ def _source_types(sources: list[dict[str, Any]]) -> set[str]:
 def _safe_text(text: str) -> bool:
     return (
         len(text) <= 2048
+        and "<|" not in text
         and re.search(r"\b(?:produto|product)\s+#?\d+\b", plain_text(text)) is None
     )
 

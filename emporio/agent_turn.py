@@ -86,8 +86,12 @@ def _step(response, messages, sender, model_client, version, handlers, state):
 
 def _terminal_result(content, state, version):
     answer = terminal(content)
-    if answer is None or not output_supported(
-        answer["text"], answer["outcome"], state["sources"], state["evidence"]
+    if (
+        answer is None
+        or answer["outcome"] != "handoff"
+        and not output_supported(
+            answer["text"], answer["outcome"], state["sources"], state["evidence"]
+        )
     ):
         return False, None
     text = HANDOFF_TEXT if answer["outcome"] == "handoff" else answer["text"]
