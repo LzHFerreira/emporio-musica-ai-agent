@@ -1,0 +1,241 @@
+{
+  "snapshot_version": "bf9e3a728f4ab12f8a82b7b18d6b4f8001901eb512115eda9e7906e21f773742",
+  "case_count": 11,
+  "section_precision": 1.0,
+  "section_recall": 1.0,
+  "condition_coverage": 1.0,
+  "internal_leakage_count": 0,
+  "irrelevant_result_count": 0,
+  "p95_seconds": 0.0029373089782893658,
+  "all_cases_passed": true,
+  "cases": [
+    {
+      "id": "hours-paraphrase",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§2"
+      ],
+      "returned_sections": [
+        "§2"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 2,
+      "conditions_required": 2,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0029373089782893658,
+      "passed": true
+    },
+    {
+      "id": "installments",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§3",
+        "§3.1"
+      ],
+      "returned_sections": [
+        "§3",
+        "§3.1"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 2,
+      "conditions_required": 2,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.001697891013463959,
+      "passed": true
+    },
+    {
+      "id": "payments-alias",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§3",
+        "§3.1"
+      ],
+      "returned_sections": [
+        "§3",
+        "§3.1"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 1,
+      "conditions_required": 1,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0024024280137382448,
+      "passed": true
+    },
+    {
+      "id": "online-return",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§4.1"
+      ],
+      "returned_sections": [
+        "§4.1"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 8,
+      "conditions_required": 8,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0019359140133019537,
+      "passed": true
+    },
+    {
+      "id": "warranty",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§8.1",
+        "§8.2",
+        "§8.3"
+      ],
+      "returned_sections": [
+        "§8.1",
+        "§8.2",
+        "§8.3"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 4,
+      "conditions_required": 4,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0016012240084819496,
+      "passed": true
+    },
+    {
+      "id": "pix-no-stacking",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§3",
+        "§6.2"
+      ],
+      "returned_sections": [
+        "§3",
+        "§6.2"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 2,
+      "conditions_required": 2,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0015199299959931523,
+      "passed": true
+    },
+    {
+      "id": "hours-paraphrase-2",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§2"
+      ],
+      "returned_sections": [
+        "§2"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 1,
+      "conditions_required": 1,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0017048110021278262,
+      "passed": true
+    },
+    {
+      "id": "returns-paraphrase-2",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§4.1"
+      ],
+      "returned_sections": [
+        "§4.1"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 2,
+      "conditions_required": 2,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.001571362983668223,
+      "passed": true
+    },
+    {
+      "id": "pix-paraphrase-2",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§3",
+        "§6.2"
+      ],
+      "returned_sections": [
+        "§3",
+        "§6.2"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 2,
+      "conditions_required": 2,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0018684710084926337,
+      "passed": true
+    },
+    {
+      "id": "irrelevant",
+      "split": "development",
+      "outcome": "not_found",
+      "expected_outcome": "not_found",
+      "expected_sections": [],
+      "returned_sections": [],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 0,
+      "conditions_required": 0,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0006792499916628003,
+      "passed": true
+    },
+    {
+      "id": "combined-catalog-policy",
+      "split": "regression",
+      "outcome": "found",
+      "expected_outcome": "found",
+      "expected_sections": [
+        "§4.1"
+      ],
+      "returned_sections": [
+        "§4.1"
+      ],
+      "section_precision": 1.0,
+      "section_recall": 1.0,
+      "conditions_covered": 1,
+      "conditions_required": 1,
+      "condition_coverage": 1.0,
+      "internal_leakage_count": 0,
+      "latency_seconds": 0.0014553070068359375,
+      "passed": true
+    }
+  ]
+}

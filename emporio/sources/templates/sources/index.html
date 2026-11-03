@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head><meta charset="utf-8"><title>{{ titulo }}</title></head>
+  <body>
+    <main>
+      <h1>{{ titulo }}</h1>
+      <ul>
+        {% for source in sources %}
+          <li>
+            {% if source.visible %}{% if source.name == 'policy_pdf' %}<a href="{% url 'staff-source-upload' source.name %}">{{ source.label }}</a>{% else %}<a href="{% url 'staff-source-detail' source.name %}">{{ source.label }}</a>{% endif %}{% else %}{{ source.label }}{% endif %}
+            <span>{{ source.filename }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+      {% if rollback_versions %}
+        <section><h2>Restaurar fonte</h2>
+          {% for version in rollback_versions %}
+            <form method="post" action="{% url 'staff-source-rollback' version.version %}">
+              {% csrf_token %}<input type="hidden" name="expected_version" value="{{ active_version }}">
+              <label>Motivo <input name="reason" required></label>
+              <button type="submit">Restaurar versão {{ version.version }}</button>
+            </form>
+          {% endfor %}
+        </section>
+      {% endif %}
+    </main>
+  </body>
+</html>

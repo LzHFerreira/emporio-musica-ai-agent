@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.emporio.sqlite3*
+.source-bundles/
 
 # Environment secrets
 .env
@@ -15,6 +17,7 @@ venv/
 .mypy_cache/
 .pyright/
 .coverage
+.coverage.*
 htmlcov/
 
 # Editors and operating systems

@@ -1,0 +1,1 @@
+"""Empório application package."""

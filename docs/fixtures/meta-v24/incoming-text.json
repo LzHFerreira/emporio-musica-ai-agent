@@ -1,0 +1,43 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "100000000000001",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "556733214500",
+              "phone_number_id": "100000000000002"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Synthetic customer"
+                },
+                "wa_id": "5567998123456"
+              }
+            ],
+            "messages": [
+              {
+                "from": "5567998123456",
+                "id": "wamid.synthetic.incoming.1",
+                "timestamp": "1793620800",
+                "type": "text",
+                "text": {
+                  "body": "Qual o horário da loja?"
+                },
+                "context": {
+                  "from": "556733214500",
+                  "id": "wamid.synthetic.previous.1"
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}

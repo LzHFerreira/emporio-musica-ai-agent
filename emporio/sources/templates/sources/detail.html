@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head><meta charset="utf-8"><title>{{ label }} — Fontes de dados</title></head>
+  <body>
+    <main>
+      <p><a href="{% url 'staff-source-index' %}">Fontes de dados</a></p>
+      <h1>{{ label }}</h1>
+      <p>Versão ativa: {{ snapshot.version }}</p>
+      <form method="get"><label>Pesquisar <input name="q" value="{{ query }}"></label><button>Buscar</button></form>
+      {% if can_edit %}<p><a href="{% url 'staff-source-upload' source %}">Enviar arquivo CSV</a></p>{% endif %}
+      <table>
+        <thead><tr>{% for header in headers %}<th>{{ header }}</th>{% endfor %}{% if can_edit %}<th>Ações</th>{% endif %}</tr></thead>
+        <tbody>
+          {% for row in rows %}<tr>
+            {% for value in row.cells %}<td>{{ value }}</td>{% endfor %}
+            {% if can_edit %}<td><a href="{% url 'staff-source-edit' source row.identity %}">Editar</a></td>{% endif %}
+          </tr>{% empty %}<tr><td colspan="20">Nenhum registro encontrado.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      <nav aria-label="Paginação">
+        {% if rows.has_previous %}<a href="?q={{ query|urlencode }}&page={{ rows.previous_page_number }}">Anterior</a>{% endif %}
+        <span>Página {{ rows.number }} de {{ rows.paginator.num_pages }}</span>
+        {% if rows.has_next %}<a href="?q={{ query|urlencode }}&page={{ rows.next_page_number }}">Próxima</a>{% endif %}
+      </nav>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+[
+  {"split":"regression","id":"hours-paraphrase","query":"Até que horas consigo falar com alguém na loja?","topic":null,"sections":["§2"],"conditions":["09:00","18:00"]},
+  {"split":"regression","id":"installments","query":"Posso dividir o pagamento?","topic":"pagamentos","sections":["§3","§3.1"],"conditions":["parcelamento","sem juros"]},
+  {"split":"regression","id":"payments-alias","query":"Quais formas de pagar estão disponíveis?","topic":"payments","sections":["§3","§3.1"],"conditions":["pix"]},
+  {"split":"regression","id":"online-return","query":"Comprei pelo site e mudei de ideia; como faço?","topic":"returns","sections":["§4.1"],"conditions":["7 (sete) dias corridos","sem necessidade de justificativa","embalagem original","sem sinais de uso","acessórios","manuais","10 dias úteis","frete"]},
+  {"split":"regression","id":"warranty","query":"Qual a garantia legal, o prazo do fabricante e o que fica de fora?","topic":"warranty","sections":["§8.1","§8.2","§8.3"],"conditions":["90 (noventa) dias","6 meses","2 anos","mau uso"]},
+  {"split":"regression","id":"pix-no-stacking","query":"O desconto de transferência soma com oferta?","topic":"pagamentos","sections":["§3","§6.2"],"conditions":["pix","promoções não são cumulativas"]},
+  {"split":"regression","id":"hours-paraphrase-2","query":"A equipe atende depois das seis da tarde?","topic":null,"sections":["§2"],"conditions":["18:00"]},
+  {"split":"regression","id":"returns-paraphrase-2","query":"Se eu não quiser mais o pedido que chegou em casa, posso mandar de volta?","topic":null,"sections":["§4.1"],"conditions":["7 (sete) dias corridos","reembolso"]},
+  {"split":"regression","id":"pix-paraphrase-2","query":"À vista no pix tem abatimento mesmo se o item estiver em promoção?","topic":null,"sections":["§3","§6.2"],"conditions":["pix","promoções não são cumulativas"]},
+  {"split":"development","id":"irrelevant","query":"Como solicito acesso aos procedimentos internos da gerência?","topic":null,"sections":[],"conditions":[]},
+  {"split":"regression","id":"combined-catalog-policy","query":"O Takamine GD20 está disponível e posso devolver se me arrepender?","topic":null,"sections":["§4.1"],"conditions":["7 (sete) dias corridos"]}
+]

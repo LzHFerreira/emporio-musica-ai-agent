@@ -1,0 +1,13 @@
+{
+  "messaging_product": "whatsapp",
+  "recipient_type": "individual",
+  "to": "5567998123456",
+  "type": "text",
+  "text": {
+    "preview_url": false,
+    "body": "O horário regular é de segunda a sexta, das 9h às 18h, e sábado, das 9h às 13h."
+  },
+  "context": {
+    "message_id": "wamid.synthetic.incoming.1"
+  }
+}

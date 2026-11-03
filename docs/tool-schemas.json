@@ -1,0 +1,146 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "search_catalog",
+      "description": "Busca produtos por referências descritivas e orçamento; nunca aceita IDs internos.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 160,
+            "default": ""
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "search",
+              "resolve"
+            ],
+            "default": "search"
+          },
+          "category": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 80,
+            "default": null
+          },
+          "max_price_brl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^(0|[1-9][0-9]{0,6})(\\.[0-9]{1,2})?$",
+            "default": null
+          },
+          "payment_method": {
+            "type": "string",
+            "enum": [
+              "unspecified",
+              "pix",
+              "debit",
+              "credit",
+              "boleto",
+              "mixed"
+            ],
+            "default": "unspecified"
+          },
+          "available_only": {
+            "type": "boolean",
+            "default": false
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "lookup_public_policy",
+      "description": "Consulta somente políticas públicas revisadas.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 240,
+            "minLength": 1
+          },
+          "topic": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "contact",
+              "hours",
+              "payments",
+              "returns",
+              "delivery",
+              "promotions",
+              "warranty",
+              "privacy"
+            ],
+            "default": null
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "query"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "list_own_orders",
+      "description": "Lista somente pedidos do remetente autenticado pela aplicação.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_own_order_status",
+      "description": "Consulta o status de um pedido pertencente ao remetente autenticado.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "order_id"
+        ]
+      }
+    }
+  }
+]

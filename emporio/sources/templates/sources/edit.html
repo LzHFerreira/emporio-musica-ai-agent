@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head><meta charset="utf-8"><title>Editar {{ label }}</title></head>
+  <body>
+    <main>
+      <h1>Editar {{ label }}</h1>
+      {% if error %}<p role="alert">{{ error }}</p>{% endif %}
+      <dl>{% for field, value in row.items %}<dt>{{ field }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+      {% for control in controls %}
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="revision" value="{{ draft.revision }}">
+        <input type="hidden" name="field" value="{{ control.field }}">
+        <label>{{ control.field }}
+          {% if control.kind == "boolean" %}
+            <input type="checkbox" name="value" value="1" {% if control.checked %}checked{% endif %}>
+          {% elif control.kind == "json" %}
+            <textarea name="value" {% if control.required %}required{% endif %}>{{ control.value }}</textarea>
+          {% elif control.kind == "decimal" %}
+            <input type="number" step="any" min="0" name="value" value="{{ control.value }}" {% if control.required %}required{% endif %}>
+          {% elif control.kind == "integer" %}
+            <input type="number" step="1" min="{{ control.minimum }}" name="value" value="{{ control.value }}" {% if control.required %}required{% endif %}>
+          {% elif control.kind == "date" %}
+            <input type="date" name="value" value="{{ control.value }}" {% if control.required %}required{% endif %}>
+          {% else %}
+            <input type="text" name="value" value="{{ control.value }}" {% if control.required %}required{% endif %}>
+          {% endif %}
+        </label>
+        <button type="submit">Salvar</button>
+      </form>
+      {% endfor %}
+      <p>Publicar: a publicação exige revisão do rascunho e permissão específica.</p>
+      <p><a href="{% url 'staff-source-preview' draft.pk %}">Pré-visualizar rascunho</a></p>
+    </main>
+  </body>
+</html>

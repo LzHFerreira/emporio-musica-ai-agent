@@ -1,99 +1,98 @@
 # Data-access design
 
-Status: requirements review in progress; step 1 is not complete and no behavioral validation is claimed. Customer events come from a trusted synthetic-sender harness; authenticated WhatsApp metadata below denotes the future contract and its simulated equivalent. Staff maintenance of all CSVs and the policy PDF through a protected web interface is required; Django integration remains under review.
+Status: catalog, protected six-CSV/PDF maintenance, pinned public lookup and customer tools are implemented. [Validation](validation.md) records local evidence; complete multi-turn/operator/resource acceptance and live compatibility remain open. Staff pages maintain canonical sources; imported tables are not an alternate editing surface.
 
 ## Decision
 
-Use SQLite as a derived query store for canonical project CSVs with read-only conversational services; Django ORM integration is under review ([ADR-0001](adr/0001-use-sqlite-for-structured-data.md)). The CSVs remain authoritative; database imports must not silently supersede or diverge from them. Policy lookup uses curated, classified sections; the model receives bounded, permitted results, never database, SQL, filesystem or full-manual access.
+Use SQLite/Django ORM for derived queries and conversation/job/reply state ([ADR-0001](adr/0001-use-sqlite-for-structured-data.md)). Exactly four model-facing tools: catalog search, public-policy lookup, list own orders, get own-order status. Product/promotion resolution, identity, permissions, staff maintenance and operator controls stay application-side. CSV/PDF remain business authority. Tools expose bounded allowlists, never SQL/filesystem/full manual. No vector DB, embeddings or agent framework; reconsider retrieval only if measured coverage is insufficient.
 
-No vector database, embeddings or agent framework is required for this design. Revisit policy search if measured section coverage is insufficient.
+## Application state and worker persistence
+
+Persist minimized turns/context, jobs, dedupe and outcomes, replies/provider IDs, delivery, counters and takeover separately from canonical business facts. Accept only after durable write; worker preserves conversation order and uses short DB transactions, never across HTTP calls. Persist deadlines/counters before calls so retry/restart cannot reset limits. Test write contention and recovery.
+
+Target structured follow-up context: preferences, budget, payment and referenced candidates with provenance/version; candidate keys stay internal. Revalidate authorization/source before reuse, rebuild/omit stale context and clarify missing referents. History may survive the 24-hour send window; it grants neither send permission nor order access.
 
 ## Source preparation
 
-A protected staff web interface must maintain all six canonical CSV datasets and the policy PDF. Validate IDs, relationships, explicit dates, nonnegative values, promotion flags/percentages and specification JSON; use Decimal and preserve source provenance. Validate/classify replacement policy content before public retrieval. Publish consistent source/query versions with safe failure recovery; customer tools cannot write business data.
+Authorized staff maintain all six CSVs and the policy PDF through protected staging/publication (see [interfaces](interfaces.md#staff-source-maintenance)). Validate IDs/relationships, dates, nonnegative values, promotion flags/percentages, spec JSON and money using Decimal; classify policy passages before exposure. Fail whole import on invalid records; unchanged reimport is idempotent. Document normalization; never let customer tools write sources.
 
-Report invalid records and fail the import transaction rather than silently skipping them or publishing partial data. Re-importing an unchanged fixture must not duplicate records. Imports are an administrative operation, unavailable to conversational tools. Document any normalization separately from source corrections.
-
-Historical installment-policy discrepancies ([orders 9, 16 and 18](requirements.md#data-and-policy-findings)) produce administrative warnings, not import failures when structural validation passes. Preserve their recorded totals and payment methods; do not recalculate them from current policy or use them to justify new installment offers. This does not expand model-facing order fields.
-
-Link products to categories, promotions to products, orders to customers, and items to orders and products. Validate order-item identity at import; do not assume an undocumented composite key or reconstruct historical totals from current prices, since no historical unit price is supplied.
+Preserve historical totals/payment methods, including orders 9, 16 and 18 whose installment amounts conflict with current thresholds; report administrative warnings, not import failures. Order-item identity is `(order_id, product_id)` and must be unique; quantity positive integer. Do not derive historical unit prices from current catalog prices.
 
 ## Access contracts
 
-The server derives customer context from authenticated transport sender metadata and a unique normalized phone match; message text and model output cannot establish or change that binding. Transport identity does not automatically establish customer-order ownership. Tool arguments cannot supply trusted roles, permissions or a verified customer ID. Every service enforces its own authorization, including calls made outside the user interface.
+Derive customer scope from authenticated channel metadata and a unique normalized phone match. Text/model arguments cannot supply identity, roles, permissions, customer IDs, prices or source versions. Each service enforces authorization independently.
 
-| Operation | Inputs | Permitted result | Gate |
-| --- | --- | --- | --- |
-| Search catalog | Name, brand, model, description, category, maximum price, optional payment method, availability filter, bounded page | Name, description, selected specifications, category, base/payable prices, payment condition, customer-facing source labels and availability; product keys stay in separate internal metadata | Public |
-| Product details | Name/model or prior conversational choice resolved internally; optional payment method | Same customer-facing fields and applicable promotion result; no product ID | Public |
-| Promotion lookup | Internally resolved product key; never a customer-supplied product ID | Snapshot-active offer, original price, percentage, calculated price or explicit ambiguity | Public |
-| Public policy lookup | Topic or question | Only classified customer-facing passages and source locators | Public |
-| Stock lookup | Product ID | Exact recorded quantity and status | staff permission, if selected |
-| Internal policy lookup | Topic or question | Passages classified for the assigned permission | staff permission, if selected |
-| Resolve customer context | Sender number from an authenticated channel event | Internal customer scope only; no customer record or match result to the model | Trusted adapter, unique normalized match, rate limited |
-| List own orders | Bounded page; no caller-supplied customer ID | Owned order IDs, dates and statuses; five per page, newest first with ID tie-break | Rechecked sender/customer scope on every page |
-| Maintain sources | Reviewed CSV record/file or PDF changes through protected staff web interface | Validated canonical version, matching derived snapshot, audit outcome or explicit errors | Authenticated staff with explicit maintenance permissions; never a conversational tool |
-| Order status | Order ID | Status and relevant available tracking/estimated-delivery fields | Verified customer owns order |
+| Operation | Input/result | Gate |
+| --- | --- | --- |
+| Catalog search/details | Descriptive reference, category, budget, payment, availability, page → public product facts/pricing/provenance; keys internal | Public |
+| Promotion lookup | Internally resolved product → snapshot-active offer, price/discount or ambiguity | Public service, not a separate tool |
+| Public policy | Topic/question → reviewed customer-facing passage/locator | Public |
+| List own orders | Page → up to 5 owned IDs/dates/statuses, newest then ID descending | Recheck binding every page |
+| Own-order status | Order ID → status, available tracking/ETA only | Sender-matched ownership |
+| Customer resolution | Authenticated sender → internal scope only | Unique match, rate-limited; result hidden from model |
+| Source maintenance | CSV/PDF draft → validated version/audit/errors | Explicit staff grants; never tool |
+| Exact stock/internal policy | Deferred staff capability | Not registered; proposed logical grants are not assigned Django permission names |
 
-Permission labels such as `view_exact_stock` and `view_internal_policy` are proposed logical capabilities; final Django permission names and assignment remain to be defined. staff authentication alone does not grant customer-order access.
+## Exact tool schemas and results
 
-Return structured outcomes (found, not found, ambiguous, unavailable, denied); map existence-revealing outcomes to one public failure response. Use explicit public-field allowlists, never full model serialization. Bound results and input lengths; set limits before implementation.
+[`tool-schemas.json`](tool-schemas.json) defines the four tools. Reject unknown keys, wrong types, non-finite values and coercions; app applies defaults. Invalid args return `error/invalid_arguments`, execute nothing. Result keys are exactly `outcome,data,sources,page,pagination_restarted,has_more,error_category`; unused values are empty/null. Outcomes: `found`, `not_found`, `ambiguous`, `denied`, `error`, `timeout`. Restricted existence-sensitive failures collapse to `denied/restricted_unavailable`. Source entries contain only `type` (`catalog|policy|orders`), public `label`, `page`, `section`, `bundle_version`; internal IDs/evidence remain protected app metadata.
+
+| Tool | `data` projection |
+| --- | --- |
+| `search_catalog` | ≤5 objects: `name,description,category,specs,base_price_brl,payable_price_brl,payment_condition,availability,promotion(state,description,discount_percent),truncated_fields`. Money/percent decimal strings; unavailable null. No ID, exact stock or creation date. Spec keys: `top,back_sides,neck,strings,scale,electronics,color,body,shells,pieces,hardware,keys,type,polyphony`; string values only. Description ≤600 chars, spec ≤80. |
+| `lookup_public_policy` | ≤3 reviewed objects `text,topic,page,section,conflict`; text ≤400 chars. Rank exact topic/Portuguese alias, distinct matched normalized tokens, then page/section. No generic manual fallback. |
+| `list_own_orders` | ≤5 objects `order_id,order_date,status`, order date DESC then ID DESC. |
+| `get_own_order_status` | One object `order_id,status,tracking_code,estimated_delivery`; missing tracking/date null. Query ID and authorized customer together; omit totals, payments, notes, addresses and customer fields. |
+
+Page reports the page served; `has_more` uses one-row lookahead. On catalog/order source change, page requests restart at 1 with `pagination_restarted=true` and bounded notice; no served page means null/false/false. Check snapshot/authorization even for empty pages. Evidence supports returned rows, never failed lookups. Catalog pages: five rows, max 20; serialized tool result ≤12 KiB. Required facts/provenance must fit or return bounded error; optional descriptions/specs may be omitted only with truncation marker.
+
+Normalize search with Unicode NFKD/casefold, remove marks and tokenize punctuation. Match exact normalized name, then all tokens in name, then all tokens across name/category/description/allowed specs. Category is exact; brand/model use recorded name, not invented columns. `resolve` returns unique best tier or ambiguity; `search` lists candidates. Order by tier, effective payable cents, normalized name, internal ID (stable tie-break, hidden). Empty query allows bounded browsing. Numeric-only/explicit internal-ID references get clarification without ID lookup; maker model codes remain valid. Prior choices use revalidated internal candidate metadata. Recommendations request `available_only=true`.
 
 ## Catalog and recommendations
 
-Resolve customer references by name, brand, model, description or prior conversational choice; clarify ambiguous matches with descriptive candidates. Product IDs are internal keys for joins, tooling and technical evidence: never ask customers for them, interpret customer numbers as database IDs, or expose them in replies, transcripts or customer-facing source references. Use product names and source versions for public provenance. Filter budget/availability in the database and hide exact stock in public projections.
+Use names/brands/models/descriptions/prior choices; clarify ambiguous matches. Never request, search by or expose product IDs; hide exact quantity. Budget is max supported payable price for specified payment. Unique applicable snapshot-active promo wins; do not stack or add PIX discount to promo. Otherwise full PIX may use active reviewed rate (initially 5%); unspecified/mixed payment uses base price, never assume PIX. Ambiguous promos stay ambiguous; base price may be offered only clearly labeled and cannot establish budget fit. Use Decimal, half-up to cents. Application computes trusted price before filtering; model cannot set it. `active` means snapshot flag, not date validity.
 
 ### Availability — FR-03, FR-04
 
-[Policy §7.3, p. 7](../data/políticas_da_loja.pdf#page=7) distinguishes temporary stockouts from discontinued products, which leave the catalog. Project decision: status gates sellability; `coming_soon` is not yet available even with positive stock.
+Policy §7.3 (p. 7) distinguishes temporary stockout from discontinued; project rule: status gates sellability.
 
-| Status | Valid quantity | Public outcome | Sellable |
+| Status | Quantity | Public availability | Sellable |
 | --- | --- | --- | --- |
-| active | > 0 | available | Yes |
-| active | 0 | temporarily_unavailable | No |
-| coming_soon | > 0 or 0 | coming_soon | No |
-| discontinued | > 0 or 0 | discontinued | No |
+| `active` | >0 | `available` | yes |
+| `active` | 0 | `temporarily_unavailable` | no |
+| `coming_soon` | any valid | `coming_soon` | no |
+| `discontinued` | any valid | `discontinued` | no |
 
-Unknown/missing statuses and missing, negative or noninteger quantities fail import validation. If encountered at read time, return availability unknown and exclude the item from sellable results; never infer availability from quantity alone.
+Unknown status or missing/negative/noninteger quantity fails import; if found at read time, mark unknown and exclude from sellable results. No unsupported restock/release/preorder/discontinued-stock promises. Explain recommendations only with recorded attributes.
 
-Only `available` items qualify for an available-only filter or an available recommendation/alternative. Explain temporary unavailability for active stockouts, upcoming availability for `coming_soon`, and catalog removal for discontinued items. Do not promise restock/release dates, preorders or discontinued-stock sales without source support.
+### Payable-price query plan
 
-The model may explain candidates using recorded attributes, but cannot invent specifications or override filters. A budget means the maximum supported payable price for the requested payment method. Use a unique applicable snapshot-active promotional price; if no applicable promotion exists and payment is fully by PIX, use base price × 0.95 ([policy §3, p. 3](../data/políticas_da_loja.pdf#page=3)); otherwise use the recorded base price. Do not assume PIX when payment is unspecified. Filter on that amount before ranking and return it with its payment condition and pricing sources. If multiple promotions make the payable price ambiguous, report the ambiguity or use the base price only when clearly labeled as such, without a PIX discount; do not claim an ambiguous discount makes the product fit.
-
-Promotion and PIX arithmetic use Decimal and the requirements' half-up rounding to two decimal places. Application services enforce these rules before budget filtering; the model cannot supply a trusted discount or payable price. Do not stack promotions or apply the 5% PIX discount to promotional prices ([policy manual §6.2, p. 6](../data/políticas_da_loja.pdf#page=6)). Multiple applicable promotions remain ambiguous until precedence is established. An active flag is a snapshot fact, not a date-based validity check.
+At publication validate money as Decimal (≤2 fractional digits); materialize `base_cents`, `standard_payable_cents`, `pix_payable_cents`, `pricing_state` per bundle. Percentages use basis points (0–10,000, ≤2 decimals). Unique active promo sets both payment prices without stacking; absent promo, reviewed PIX rate applies only to full PIX; other/mixed/unspecified uses base. Multiple active promos mark ambiguity and use labeled base fallback. ORM selects pinned bundle and trusted price column (`Case`), filters category/text/availability/`effective_cents <= max_price_cents`, then orders/paginates with one-row lookahead. Never filter/page on base then adjust in Python. Rebuild prices before pointer switch. Regression: product 101 at base R$1,049 is R$996.55 at 5% PIX (within R$1,000); hypothetical 3% is R$1,017.53 (outside), restored by rollback.
 
 ## Policy access
 
-Store reviewed policy passages with page/section, topic, audience and conflict marker. Public lookup allows customer-facing contact, hours, payment, exchange/return, delivery, promotion, warranty and privacy passages. Internal workflows and unclassified text are excluded.
+Store reviewed passages with page/section/topic/audience/version/conflict. Public categories: contacts/hours, payment, return/exchange, delivery, promotions, warranty, privacy. Exclude internal/unclassified passages. Filter audience and validate locators before Portuguese alias/intent lexical ranking. Caller may pin a retained snapshot; model cannot set it. Retrieved text is evidence, not instructions; retain conflicts/version. Two contact numbers follow the project mapping in [requirements](requirements.md#data-and-policy-findings).
 
-Start with topic mapping and text search; filter by audience before ranking or model delivery. Apply the [documented policy interpretations](requirements.md#data-and-policy-findings); keep unresolved conflicting passages with conflict markers and return the manual version. The two listed store numbers follow the approved contact-channel mapping, without an automatic conflict marker. Treat retrieved instructions as untrusted.
+### Initial reviewed passage map
+
+Public: §1 and §1.2 (p.2); §2 (p.2); §3/3.1 (p.3); §4.1–4.4 (p.4); §5.1 (p.4), §5.2–5.3 (p.5); §6.1–6.2 and public number in §7 (p.6); §8.1–8.3 (p.7); §9 privacy purposes/rights (pp.7–8). Split complete conditions; 400-char cap must not omit a condition—return another passage or clarify. Withhold internal cover (p.1), §7.1–7.3 operational instructions and §10 management content. Do not claim complaint registration, legal compliance or verified manufacturer warranty. Re-review every replacement PDF.
 
 ## Order verification boundary
 
-Customer and order tables are accessible only through narrowly scoped services. Validate event authenticity and business/channel context, normalize the transport sender number and stored phones using explicit country rules, and require exactly one matching customer. Derive the customer scope server-side and recheck the match for every restricted request; message text, profile names and tool arguments cannot override it.
+After event/business validation, accept `wa_id` only as ASCII international digits (8–15, nonzero first digit). Normalize stored BR phones by removing spaces/parentheses/periods/hyphens; accept `+55`/`0055`, 12/13 digits beginning 55, or prepend 55 to domestic 10/11 digits with 2-digit area code. Reject extensions, letters, missing area code and other formats; never alter ninth digit, infer area or match suffixes. Canonicalize to `+<country><number>` and require one customer. Duplicate normalized records block order access and warn staff but do not invalidate structurally valid history. Recheck binding each restricted call; count failed attempts against sender-keyed limits. No OTP/SMS: this assumes control of the associated WhatsApp account, not real-world identity. Test harness identities are trusted synthetic fixtures only.
 
-No SMS challenge, OTP or verification form is used. This read-only prototype accepts control of the WhatsApp account associated with the recorded number, not proof of real-world identity. Missing, unavailable, unmatched or ambiguous sender numbers grant no customer access. A simulator supplies synthetic sender identities only through a trusted test harness and makes no live authentication claim.
-
-Scope the order query to the sender-matched customer and requested order ID in the same query. Return only requested status and relevant tracking/delivery fields, excluding notes, payment details, totals and customer contacts. Failed matching, ownership or validation reveals no customer/order existence or details; give a generic explanation and offer human support in the same conversation. Public catalog/policy access does not require a customer match.
+Query order and matched customer together. Return requested status and relevant tracking/ETA only. Missing/unmatched/ambiguous sender, ownership or validation failure reveals no existence/details; respond generically and offer same-conversation human support. Public catalog/policy does not require matching.
 
 ## Boundaries and provenance
 
-Follow the accepted [input-minimization and replay contract](requirements.md#chat-ingress-retention-and-replay), independently of tool projections. Validate supported message types, text, size and rate limits before model calls or retention; disable raw request-body capture. Remove clearly unnecessary personal-contact spans while preserving questions, budgets, ambiguous numeric identifiers and approved public store contacts. A contact pattern alone never rejects a message. On validation or minimization failure, use a fixed, non-echoing fallback without forwarding or retaining raw input.
+See [input minimization and replay](requirements.md#chat-ingress-retention-and-replay): validate type/text/size/rate before retention/model; authenticate separately; never capture raw bodies. Remove unnecessary contact spans while preserving questions, budgets, identifiers and approved public contacts. Failure is fixed, non-echoing, with no raw forwarding/retention. Sender metadata, matches and removed spans stay out of model/transcripts/ordinary logs; use trusted roles and validated minimized history only. Revalidate history/cache after source changes; omit/rebuild unsafe context and clarify missing references.
 
-Keep transport sender metadata, customer-matching details and removed personal-contact spans outside model context, transcripts and ordinary logs. Retain only minimized turns with trusted roles, provenance and policy versions. Validate output against permitted projections and approved public store contacts. Reuse only currently validated history and derivatives; omit unsafe content or rebuild it from safe turns, continuing supported new requests and clarifying missing context when needed. No history, retry or context-building path may bypass these checks or trust a client-supplied assistant role.
-
-Return source type, record ID or policy locator, and source version or modification marker where available. Distinguish source update time from import time so users and operators can identify which canonical version backs an answer. By default, logs include operation and safe outcome only, excluding raw messages, sender numbers, customer records and sensitive tool arguments.
-
-Model-facing tools call these services and receive only their permitted projections. Application checks apply before retrieval and before disclosure; prompts provide an additional behavioral instruction rather than the authorization mechanism. No operational write tools are included.
+Protected evidence records source type, internal ID or policy locator, and bundle version; model/customer sees only public labels/locators. Distinguish source update from import time. Logs contain safe operation/outcome only. Validate reply projection/references/size before queue and recheck takeover, authorization/source before dispatch; stale/unsafe output uses fixed failure path, no extra model turn. Combined answers may retain supported policy facts when catalog fails, explicitly saying availability is unconfirmed. Prompts supplement, never enforce, access checks. No operational write tools.
 
 ## Verification before implementation completion
 
-Trace tests to FR-03–FR-14 and NFR-01–NFR-07 as applicable. Cover import failure/repeatability, permitted projections, pricing/availability, scoped customer matching/ownership and safe telemetry. Exercise required staff source maintenance and customer CLI event/replay/takeover behavior against the [interface contracts](interfaces.md).
+Trace tests to FR-03–FR-14/NFR-01–07. Cover import failure/idempotency, projections, pricing/availability, normalized ownership, telemetry, source maintenance, ingress/replay/takeover, shared-SQLite contention, retry/restart budgets, context invalidation, partial lookup failure and authorization/source/takeover changes between draft and dispatch. Diagnostics may retain returned IDs, counters and bounded categories, never raw prompts/customer records/secrets.
 
-## Decisions to close
+## Implementation and validation status
 
-- Review policy passage classification and exact source locators.
-- Confirm promotion applicability and any normalization rules; product availability follows the table above.
-- Set query bounds, sender-number normalization, customer binding and order-access rate limits.
-- Define validated source-update and import/reconciliation semantics, including handling of records removed from canonical CSVs; assign BU ownership of source maintenance for any real-world deployment.
-- Implement the [local message/event contracts](interfaces.md#message-and-delivery-contracts); select backend/model integration and pin reviewed representative fixtures. Live WhatsApp adapter validation remains future scope.
+Catalog import/search/pricing, protected publication, pinned policy lookup and sender-scoped order tools are implemented. Signed ingress, durable job/reply, recovery/dispatch/privacy checks, publication subprocess-crash tests and 11-case retrieval metrics have local evidence. [Validation](validation.md) lists exact coverage and gaps; [security review](security-review.md) describes boundaries. Live model task quality, Meta compatibility, full history/operator behavior and all resource limits remain unverified.

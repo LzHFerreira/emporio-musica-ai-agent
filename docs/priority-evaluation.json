@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "scope": "Independent offline validation after priorities 1-6 runtime freeze",
+  "status": "offline_validation_passed_live_provider_request_rate_limited",
+  "runtime_provenance": {
+    "python_tree_sha256": "c462fa0ba1e7eabf4a441741dc8e557ed162036ffba68a4c2af6b11e1511cf39",
+    "source_snapshot_version": "bf9e3a728f4ab12f8a82b7b18d6b4f8001901eb512115eda9e7906e21f773742",
+    "key_runtime_files": {
+      "emporio/agent_protocol.py": "22703f25703bc757862e7c586de05e31a29e4104e5ec6b0ebf8e4b1347403c4c",
+      "emporio/agent_schemas.py": "494c994e0de3cd148225cc89f77b8283bf5754228cff23a197d0f7d3107c752f",
+      "emporio/agent_turn.py": "2f9146fa2f0dec6724ed7a9ae81986a48f6306bcfc904f04356e6effb8b4f595",
+      "emporio/chat/openrouter.py": "95fad304de80624ecff61e7fb6df91e574f726d0827f624002166f070e175a3a",
+      "emporio/chat/local_interaction.py": "b6636e2bd57c3ca92d20dab61a291df618745b4a47b938669e8d0080faa2a642",
+      "emporio/chat/context.py": "ab1870576b2cdf5e1220d4c64eb799a106065c637e57badece7bd632e124157b",
+      "docs/tool-schemas.json": "e3f1c1a8590f9911f609e98387e02dadd399f1e85cc2fd113d19fc3524462485"
+    },
+    "fresh_copy_scope": "Temporary fresh-files copy with a fresh database; reused the existing .venv and installed dependencies. This was not a clean dependency installation or a Git checkout.",
+    "data_scope": "Copied six canonical CSVs and the reviewed policy PDF. No customer/order fixture records were entered into model prompts."
+  },
+  "test_first_ownership": {
+    "red_owner": "priorities_red (test-only)",
+    "green_owner": "priorities_green (production-only)",
+    "independent_validator": "audit_validation",
+    "context_red_log": "The original raw context RED log was overwritten during iteration; the prior failing result was observed and reported, but that original raw log is not retained as an artifact."
+  },
+  "offline_fresh_copy_smoke": {
+    "status": "passed",
+    "checks": {
+      "django_system_check": "passed",
+      "fresh_database_migrations": "passed",
+      "canonical_source_import": "passed",
+      "fixed_retrieval_regression": "passed (11 of 11 cases)",
+      "staff_runserver_login_and_source_index": "passed",
+      "interactive_cli_signed_worker_openrouter_mock": "passed (2 local model requests, 1 policy tool call, mock Meta reply accepted)",
+      "scripted_transport_demo": "passed"
+    },
+    "lease_note": "Wait at least five seconds before starting a separate worker-backed command against the same database, allowing the singleton worker lease to expire."
+  },
+  "offline_retrieval_evaluation": {
+    "cases": 11,
+    "all_passed": true,
+    "section_precision": 1.0,
+    "section_recall": 1.0,
+    "condition_coverage": 1.0,
+    "internal_leakage_count": 0,
+    "irrelevant_result_count": 0,
+    "observed_p95_seconds": 0.00220952,
+    "interpretation": "Deterministic retrieval evidence only; not generated-answer evaluation or evidence of OpenRouter availability."
+  },
+  "independent_public_source_checks": [
+    {
+      "case": "promotion_pix_boundary",
+      "passed": true,
+      "product": "Kalani KAL-700T Tenor Natural",
+      "payable_price_brl": "323.10",
+      "availability": "available",
+      "promotion": "active, 10%",
+      "sources": ["catalog", "policy"]
+    },
+    {
+      "case": "pix_payable_boundary",
+      "passed": true,
+      "product": "Giannini GNF-3 CEQ Elétrico Nylon Natural",
+      "payable_price_brl": "996.55",
+      "availability": "available",
+      "promotion": "none",
+      "sources": ["catalog", "policy"]
+    },
+    {
+      "case": "online_return_paraphrase",
+      "passed": true,
+      "returned_passages": 2,
+      "sections": ["§4.1", "§4.1"],
+      "source_types": ["policy"]
+    },
+    {
+      "case": "zero_stock",
+      "passed": true,
+      "product": "Giannini GF-3D Dreadnought Sunburst",
+      "availability": "temporarily_unavailable",
+      "source_types": ["catalog"]
+    },
+    {
+      "case": "coming_soon",
+      "passed": true,
+      "product": "Kala KA-ABP-CTG Barítono Cedar",
+      "availability": "coming_soon",
+      "source_types": ["catalog"]
+    },
+    {
+      "case": "discontinued",
+      "passed": true,
+      "product": "Ibanez Bass 2X Electric Bass",
+      "availability": "discontinued",
+      "source_types": ["catalog"]
+    }
+  ],
+  "live_model_evaluation": {
+    "status": "one_http_429_no_completion_or_answer_score",
+    "model_requested": "google/gemma-4-26b-a4b-it:free",
+    "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+    "authorization": "User explicitly authorized this specific external destination and the bounded synthetic/public-data evaluation scope.",
+    "requests_made": 1,
+    "http_status": 429,
+    "latency_seconds": 0.551,
+    "prompt_sha256": "53d591f9b3a61d2608c0461a26969ebbe35cb2b857b4ab339091de4b33ca7cc2",
+    "invocation_path": "Direct run_turn and OpenRouterClient call. The live probe did not use interact_chat, signed webhook ingress, the worker or Meta transport.",
+    "credential_handling": "The independent validation harness parsed the existing ignored .env with an exact-key parser. The key value was not displayed or retained, and the implementation owner did not inspect the file.",
+    "synthetic_question": "Estou procurando um ukulele tenor disponível e meu limite é R$ 323,10 pagando tudo no PIX. Algum se encaixa?",
+    "human_review_criteria": "Check the active promotion price without stacking the PIX discount, the exact inclusive budget boundary, availability, source routing and descriptive product references. No completion was returned, so none of these answer criteria were scored.",
+    "tools_offered": ["search_catalog", "lookup_public_policy", "list_own_orders", "get_own_order_status"],
+    "tool_calls": 0,
+    "provider_completions": 0,
+    "generated_answers_scored": 0,
+    "data_boundary": "No customer/order records or identity data were sent. The request ended before any catalog or policy tool result was retrieved.",
+    "application_failure_path": "passed: run_turn returned one fixed fallback, with no evidence claims and no tool calls after the provider rejection",
+    "human_review": "Not scored: no model completion was returned. A single HTTP 429 does not establish model incapability or persistent provider unavailability.",
+    "retry_or_model_fallback": "none; stopped after the first response",
+    "held_out_case_details_disclosed_before_runtime_freeze": false
+  },
+  "invalidation": "Re-run independent validation if runtime Python files, prompt, tool schemas, canonical source snapshot, or relevant settings change. The hashes above identify the evaluated tree and sources."
+}

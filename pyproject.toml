@@ -1,0 +1,94 @@
+[project]
+name = "emporio-musica-agent"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.2,<5.3",
+    "httpx>=0.28,<1",
+    "mcp==1.23.3",
+]
+
+[dependency-groups]
+dev = [
+  "ruff==0.16.3", "ty==0.0.72",
+  "basedpyright==1.39.8", "mypy==2.1.0",
+  "pydoclint==0.8.7", "import-linter==2.13",
+  "semgrep==1.172.0", "radon==6.0.1",
+  "pytest==9.2.0", "pytest-cov==7.0.0",
+  "pytest-django==4.12.0",
+  "django-stubs==6.0.6",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "emporio.settings"
+testpaths = ["tests"]
+addopts = "--cov=emporio --cov-branch --cov-report=term-missing --cov-fail-under=95"
+
+[tool.coverage.run]
+source = ["emporio"]
+branch = true
+omit = ["*/migrations/*"]
+patch = ["subprocess"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv", "migrations", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.basedpyright]
+include = ["emporio", "manage.py", "scripts"]
+exclude = ["**/.venv/**", "**/migrations/**", "**/tests/**"]
+venvPath = "."
+venv = ".venv"
+
+[tool.mypy]
+exclude = '(^|/)(tests|migrations)(/|$)'
+ignore_missing_imports = true
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "emporio.settings"
+
+[tool.pydoclint]
+style = "google"
+exclude = '(^|/)(\.venv|migrations|tests)(/|$)'
+arg-type-hints-in-signature = true
+arg-type-hints-in-docstring = false
+check-arg-order = true
+check-return-types = true
+check-yield-types = true
+check-style-mismatch = true
+skip-checking-short-docstrings = true
+ignore-underscore-args = true
+check-class-attributes = false
+allow-init-docstring = true
+
+[tool.importlinter]
+root_packages = ["emporio"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Catalog pricing and normalization stay independent of persistence"
+type = "forbidden"
+source_modules = ["emporio.catalog.pricing", "emporio.catalog.normalize"]
+forbidden_modules = [
+  "django",
+  "emporio.sources",
+  "emporio.orders",
+  "emporio.management",
+  "emporio.catalog.models",
+  "emporio.catalog.query",
+  "emporio.catalog.services",
+]
+
+[tool.ty.environment]
+root = ["."]
+
+[tool.ty.src]
+exclude = [".venv", "tests", "**/migrations/**"]

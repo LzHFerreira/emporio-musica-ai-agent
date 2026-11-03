@@ -1,0 +1,84 @@
+{
+  "model_mode": "scripted",
+  "notice": "Deterministic scripted model adapter; not evidence of live LLM answer quality.",
+  "interaction_count": 5,
+  "accepted_count": 5,
+  "delivered_count": 5,
+  "interactions": [
+    {
+      "case": "catalog_only",
+      "question": "Quanto custa o Takamine GD20 e ele está disponível?",
+      "answer": "Takamine GD20 Dreadnought Natural está disponível por R$ 2199,00.",
+      "outcome": "answer",
+      "source_types": [
+        "catalog"
+      ],
+      "snapshot_version": "bf9e3a728f4ab12f8a82b7b18d6b4f8001901eb512115eda9e7906e21f773742",
+      "model_requests": 2,
+      "tool_executions": 1,
+      "provider_accepted": true,
+      "delivery_confirmed": true,
+      "reply_state": "delivered"
+    },
+    {
+      "case": "policy_only",
+      "question": "Qual é o horário de funcionamento?",
+      "answer": "2. Horário de Funcionamento O atendimento presencial na loja segue os horários abaixo. O atendimento via WhatsApp segue o mesmo horário, com respostas automáticas fora do expediente. Dia Horário Segunda a Sexta-feira 09:00 às 18:00 Sábado 09:00 às 13:00 Domingo e Feriados Fechado Em datas especiais (Black Friday, Aniversário da Loja, Natal), o horário pode ser estendido.",
+      "outcome": "answer",
+      "source_types": [
+        "policy"
+      ],
+      "snapshot_version": "bf9e3a728f4ab12f8a82b7b18d6b4f8001901eb512115eda9e7906e21f773742",
+      "model_requests": 2,
+      "tool_executions": 1,
+      "provider_accepted": true,
+      "delivery_confirmed": true,
+      "reply_state": "delivered"
+    },
+    {
+      "case": "catalog_and_policy",
+      "question": "O Takamine GD20 está disponível e posso devolver se me arrepender?",
+      "answer": "Takamine GD20 Dreadnought Natural está disponível por R$ 2199,00. 4.1 Direito de Arrependimento (Compras Online) O cliente pode solicitar a devolução em até 7 (sete) dias corridos após o recebimento do produto, sem necessidade de justificativa. • O produto deve estar em sua embalagem original, sem sinais de uso, com todos os acessórios e manuais. • O reembolso será realizado na mesma forma de pagamento original em até 10 dias úteis. • O frete de devolução é por conta da loja em caso de arrependimento.",
+      "outcome": "answer",
+      "source_types": [
+        "catalog",
+        "policy"
+      ],
+      "snapshot_version": "bf9e3a728f4ab12f8a82b7b18d6b4f8001901eb512115eda9e7906e21f773742",
+      "model_requests": 2,
+      "tool_executions": 2,
+      "provider_accepted": true,
+      "delivery_confirmed": true,
+      "reply_state": "delivered"
+    },
+    {
+      "case": "pix_budget",
+      "question": "Quero um violão de nylon até R$ 1.000 pagando integralmente por PIX.",
+      "answer": "Para pagamento integral por PIX, Tagima Memphis AC-39 Nylon Natural fica em R$ 408,41. 6.2 Regras de Promoções Cumulatividade: promoções não são cumulativas. O desconto de PIX (5%) não se aplica sobre preços já promocionais. Estoque: promoções estão sujeitas à disponibilidade de estoque. Produtos esgotados durante a promoção não geram direito a rain check (reserva de preço). 3. Formas de Pagamento Aceitamos as seguintes formas de pagamento para compras presenciais e online: Forma Condições Observações PIX Pagamento à vista 5% de desconto sobre o preço de tabela Cartão de Débito Pagamento à vista Todas as bandeiras aceitas Cartão de Crédito Até 12x sem juros Parcela mínima de R$ 100,00 Boleto Bancário Pagamento à vista Compensação em até 3 dias úteis",
+      "outcome": "answer",
+      "source_types": [
+        "catalog",
+        "policy"
+      ],
+      "snapshot_version": "bf9e3a728f4ab12f8a82b7b18d6b4f8001901eb512115eda9e7906e21f773742",
+      "model_requests": 2,
+      "tool_executions": 2,
+      "provider_accepted": true,
+      "delivery_confirmed": true,
+      "reply_state": "delivered"
+    },
+    {
+      "case": "human_handoff",
+      "question": "Quero falar com uma pessoa do atendimento.",
+      "answer": "Encaminhei sua conversa para atendimento humano.",
+      "outcome": "handoff",
+      "source_types": [],
+      "snapshot_version": "bf9e3a728f4ab12f8a82b7b18d6b4f8001901eb512115eda9e7906e21f773742",
+      "model_requests": 1,
+      "tool_executions": 0,
+      "provider_accepted": true,
+      "delivery_confirmed": true,
+      "reply_state": "delivered"
+    }
+  ]
+}

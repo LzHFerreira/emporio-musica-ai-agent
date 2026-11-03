@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Enviar fonte — {{ label }}</title></head>
+<body><main><h1>Enviar {% if is_pdf %}PDF{% else %}arquivo CSV{% endif %} — {{ label }}</h1>
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<input type="hidden" name="revision" value="{{ draft.revision }}">
+<label>Arquivo {% if is_pdf %}PDF{% else %}CSV{% endif %} <input type="file" name="file" accept="{% if is_pdf %}.pdf,application/pdf{% else %}.csv,text/csv{% endif %}" required></label>
+{% if not is_pdf %}<label>Modo <select name="mode"><option value="append">Acrescentar</option><option value="upsert">Atualizar ou inserir</option><option value="replace">Substituir</option></select></label>{% endif %}
+<button type="submit">Enviar para revisão</button></form>
+</main></body></html>

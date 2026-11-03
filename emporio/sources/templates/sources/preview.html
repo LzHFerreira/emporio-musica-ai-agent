@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Pré-visualização</title></head>
+<body><main><h1>Pré-visualização do rascunho</h1><p>Versão de origem: {{ draft.base_version }} · Revisão {{ draft.revision }}</p>
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+{% for source, values in counts.items %}<p>{{ source }}: {{ values.inserted }} inseridos, {{ values.changed }} alterados, {{ values.unchanged }} sem alteração, {{ values.deleted }} excluídos</p>{% endfor %}
+{% for source, rows in preview.items %}<section><h2>{{ source }}</h2><table><tbody>{% for row in rows %}<tr>{% for field, value in row.items %}<td>{{ field }}: {{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></section>{% endfor %}
+{% if policy_candidate %}<section><h2>Revisão do PDF de políticas</h2>
+<p>PDF SHA-256: {{ policy_candidate.candidate_sha256 }}</p>
+{% for page in policy_candidate.pages %}<h3>Texto extraído — página {{ forloop.counter }}</h3><pre>{{ page }}</pre>{% endfor %}
+<form method="post">{% csrf_token %}<input type="hidden" name="revision" value="{{ draft.revision }}">
+<label>Desconto PIX (%) <input name="pix_discount_percent" required></label>
+<label><input type="checkbox" name="unchanged_rules_attested" value="yes" required> Revisei os demais preços, contatos, horários e regras; os que não listei permanecem inalterados</label>
+<label>Passagens revisadas em JSON (page, section, topic, audience, conflict, text) <textarea name="passage_reviews" required></textarea></label>
+<button type="submit">Salvar revisão da política</button></form></section>{% endif %}
+<form method="post" action="{% url 'staff-source-publish' draft.pk %}">{% csrf_token %}<input type="hidden" name="revision" value="{{ draft.revision }}">
+{% if requires_deletion_confirmation %}<label><input type="checkbox" name="confirm_deletions" value="yes" required> Confirmo as exclusões mostradas nesta revisão</label>{% endif %}
+<button type="submit">Publicar revisão</button></form>
+</main></body></html>

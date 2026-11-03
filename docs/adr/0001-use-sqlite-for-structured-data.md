@@ -1,39 +1,22 @@
-# ADR-0001: Use SQLite for structured operational data
+# ADR-0001: SQLite through Django ORM
 
-- Status: SQLite accepted; Django integration under review following the WhatsApp channel decision (2026-11-01).
-- Date: 2026-10-31
-
-## Context
-
-The prototype uses small related CSV datasets as its canonical project sources and needs relational queries with application-enforced access to restricted fields and orders. SQLite is a derived query store, not an independent business-data authority. There is no demonstrated need for a separate database server or concurrent writes.
+- Status: Implemented locally; broader contention and durability limits remain unqualified.
+- Date: 2026-10-31; updated 2026-11-02.
 
 ## Decision
 
-Use SQLite as the application SQL database. The Django models, ORM, management commands and Admin discussed below belong to the initial integration proposal; re-evaluate them against the [WhatsApp channel requirements](../requirements.md#purpose-and-scope) before implementation.
+Use Django 5.2 LTS models, migrations and management commands with SQLite for derived catalog/order data and application-owned conversation, job, reply and delivery state. The web process persists accepted work; a separate worker processes it. Keep writes short and outside provider calls. The database is generated locally and is not committed.
 
-Keep the six CSV datasets and policy PDF as versioned canonical sources. A protected staff web interface for their maintenance is required. Validate changes and refresh derived SQLite/policy retrieval data with matching provenance; preserve source IDs and repeatable imports without duplicates. Database-only business edits cannot bypass canonical sources.
+The six CSVs and policy PDF remain canonical business sources. Imports and protected staff publication create versioned snapshots; database-only edits cannot change business facts. Conversational services enforce ownership and field allowlists. The model cannot issue SQL. Ordinary admin views of imported rows are read-only. See [staff publication](0003-protected-source-maintenance.md) and the [tool boundary](../data-access.md).
 
-Generate the database locally through migrations and the import command; do not commit the database file or SQLite sidecar files. Document the exact setup commands when implemented.
+## Alternatives and tradeoffs
 
-Expose read-only services that enforce permissions, customer ownership and field allowlists before returning data. Do not let the model generate or execute arbitrary SQL. If included, Django Admin is authorized for read-only inspection.
-
-## Alternatives considered
-
-| Alternative | Assessment |
+| Option | Reason |
 | --- | --- |
-| Direct CSV or in-memory queries | Feasible at this size, but requires custom handling of joins, validation and lookup behavior that Django models can centralize. |
-| SQLite through Django ORM | Under review: relational queries and migrations without a separately managed database service. |
-| PostgreSQL | Adds provisioning and configuration without a demonstrated prototype requirement. Reconsider if deployment or concurrent-write needs justify it. |
+| Direct CSV/in-memory reads | Simpler at this scale, but duplicates relational validation and query logic. |
+| SQLite + Django ORM | Selected: relational queries and shared local state without a database service. Concurrent writes still need deployment-specific validation. |
+| PostgreSQL | Revisit if deployment or measured write contention requires it. |
 
-## Consequences
+## Evidence and limits
 
-Setup requires schema migrations and canonical-source import. Import validation, source-update and reconciliation semantics need implementation and tests. SQLite remains a derived store; answers reflect the canonical source version imported into it. The prototype does not claim live synchronization with external operational systems.
-
-Django models do not themselves establish authorization or prevent sensitive disclosure. Application services must enforce those boundaries independently of model instructions.
-
-This decision selects storage for structured CSV data. It does not select an agent framework, policy retrieval architecture, model or provider, and does not constitute an implementation or validation result.
-
-## Related documents
-
-- [Requirements](../requirements.md)
-- [Data-access design](../data-access.md)
+Snapshot publication, source imports, pinned reads and process-termination recovery have automated tests. They do not prove broad simultaneous-process behavior or physical power-loss durability. SQLite stores derived business data and authoritative application state; it is not live-synchronized with an external database. See [validation](../validation.md) and [interfaces](../interfaces.md).
