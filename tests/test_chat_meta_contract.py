@@ -154,7 +154,7 @@ class CustomerTurnIntegrationTests(TestCase):
             return httpx.Response(200, json=next(answers))
 
         cloud_http = httpx.Client(transport=httpx.MockTransport(respond))
-        model = CloudflareClient(account_id="acct", api_key="cf-key", client=cloud_http)
+        model = CloudflareClient(account_id="acct", api_key="cf-key", model="@cf/google/gemma-4-26b-a4b-it", client=cloud_http)
         sender, meta_http = self.meta_sender(final)
         with patch("django.utils.timezone.now", return_value=happened + timedelta(seconds=1)):
             reply = process_next(model_client=model, send_client=sender)

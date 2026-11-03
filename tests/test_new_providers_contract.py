@@ -45,7 +45,7 @@ class ProviderFactoryContractTests(SimpleTestCase):
                 providers.create_model_client()
         with override_settings(MODEL_PROVIDER="cloudflare", CLOUDFLARE_API_KEY="key", CLOUDFLARE_ACCOUNT_ID="acct"):
             model = providers.create_model_client()
-            self.assertEqual((type(model).__name__, model.model), ("CloudflareClient", "@cf/google/gemma-4-26b-a4b-it"))
+            self.assertEqual((type(model).__name__, model.model), ("CloudflareClient", "@cf/zai-org/glm-4.7-flash"))
             model.client.close()
 
 class CloudflareWireContractTests(SimpleTestCase):
@@ -55,7 +55,7 @@ class CloudflareWireContractTests(SimpleTestCase):
         seen = []
         response = {"choices": [{"message": {"role": "assistant", "content": "ok"}, "finish_reason": "stop"}], "model": "@cf/google/gemma-4-26b-a4b-it"}
         client = httpx.Client(transport=httpx.MockTransport(lambda request: (seen.append(request), httpx.Response(200, json=response))[1]))
-        model = module.CloudflareClient(account_id="acct", api_key="cf-key", client=client)
+        model = module.CloudflareClient(account_id="acct", api_key="cf-key", model="@cf/google/gemma-4-26b-a4b-it", client=client)
         self.assertEqual(model([{"role": "user", "content": "oi"}], [])["content"], "ok")
         request = seen[0]
         self.assertEqual((request.url.host, request.url.path), ("api.cloudflare.com", "/client/v4/accounts/acct/ai/v1/chat/completions"))

@@ -70,7 +70,7 @@ CLOUDFLARE_API_KEY = os.environ.get("CLOUDFLARE_API_KEY") or os.environ.get(
     "CLOUDFLARE_API_TOKEN", ""
 )
 CLOUDFLARE_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
-CLOUDFLARE_MODEL = os.environ.get("CLOUDFLARE_MODEL", "@cf/google/gemma-4-26b-a4b-it")
+CLOUDFLARE_MODEL = os.environ.get("CLOUDFLARE_MODEL", "@cf/zai-org/glm-4.7-flash")
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:4b")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")

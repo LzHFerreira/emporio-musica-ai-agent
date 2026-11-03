@@ -160,7 +160,7 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         reply = _tool_call(json.dumps({"outcome": "clarification", "text": "Você prefere um tipo de instrumento específico?", "reason": None}))
         bodies = iter([{"choices": [{"message": {"role": "assistant", "tool_calls": [browse_call]}, "finish_reason": "tool_calls"}]}, {"choices": [{"message": {"role": "assistant", "tool_calls": [reply]}, "finish_reason": "tool_calls"}]}])
         http = httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(200, json=next(bodies))))
-        model = CloudflareClient(account_id="acct", api_key="cf-key", client=http)
+        model = CloudflareClient(account_id="acct", api_key="cf-key", model=GEMMA, client=http)
         browse = Mock(return_value={"outcome": "found", "data": [], "sources": [], "page": None})
         result = run_turn("Pode me mostrar opções?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={"search_catalog": browse})
         browse.assert_called_once_with({"query": ""}, "5567998123456", "bundle-v1")
