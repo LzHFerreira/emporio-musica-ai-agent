@@ -121,11 +121,6 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         bad_batches = [
             [_tool_call("not-json")],
             [_tool_call("[]")],
-            [_tool_call(json.dumps({"outcome": "answer", "text": "Resposta", "reason": None, "extra": True}))],
-            [_tool_call(json.dumps({"outcome": "unsupported", "text": "Resposta", "reason": None}))],
-            [_tool_call(json.dumps({"outcome": "answer", "text": "Resposta", "reason": "unsupported"}))],
-            [_tool_call(json.dumps({"outcome": "handoff", "text": "Resposta", "reason": None}))],
-            [_tool_call(json.dumps({"outcome": "answer", "text": "", "reason": None}))],
             [_tool_call(terminal), _tool_call(terminal, identifier="reply-2")],
             [_tool_call(terminal), _tool_call('{"query":"Takamine GD20"}', "search_catalog", "catalog")],
         ]
@@ -191,4 +186,12 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
             result = run_turn("qual preço?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
         self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 3, 0))
         supported.assert_called_with(claim, "answer", [], [])
+        http.close()
+
+    def test_gemma_invalid_terminal_reply_is_retried_not_raised(self):
+        invalid = {"outcome": "out_of_scope", "text": "Não vendemos pizza.", "reason": "unsupported"}
+        body = {"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call(json.dumps(invalid, ensure_ascii=False))]}, "finish_reason": "tool_calls"}], "model": GEMMA}
+        model, http = _client_for(body)
+        result = run_turn("Vocês vendem pizza?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
+        self.assertEqual((result["model_requests"], result["text"]), (3, FAILURE_TEXT))
         http.close()

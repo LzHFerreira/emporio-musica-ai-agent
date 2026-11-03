@@ -4,8 +4,6 @@ import json
 from copy import deepcopy
 from typing import Any
 
-from emporio.agent_protocol import terminal
-
 _NAME = "respond_to_customer"
 _INSTRUCTION = (
     "For customer replies, use respond_to_customer only after checking all needed facts with "
@@ -150,6 +148,4 @@ def _terminal_content(call: dict[str, Any]) -> str:
     if not isinstance(arguments, dict):
         raise ValueError("Gemma returned malformed terminal-reply arguments")
     content = json.dumps(arguments, ensure_ascii=False)
-    if terminal(content) is None:
-        raise ValueError("Gemma returned an invalid terminal reply")
     return content
