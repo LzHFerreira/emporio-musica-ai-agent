@@ -103,3 +103,16 @@ class AgentTurnContractTests(TestCase):
         self.assertEqual(result["text"], "Oi! Como posso ajudar?")
         self.assertEqual(result["model_requests"], 2)
         self.assertTrue(any(m["role"] == "user" and "rejeitada" in m["content"] for m in seen[1]))
+
+    def test_numbered_list_prices_are_bound_per_item_and_swapped_prices_rejected(self):
+        search = tool_call("search_catalog", {"query": "violão de nylon", "max_price_brl": "1000", "payment_method": "pix", "available_only": True})
+        good = "Temos opções no PIX:\n1) Tagima Memphis AC-39 Nylon Natural\nPreço no PIX: R$ 408,41\n2) Rozini RC-104 Nylon Estudante\nPreço no PIX: R$ 436,91"
+        swapped = good.replace("R$ 408,41", "R$ TMP").replace("R$ 436,91", "R$ 408,41").replace("R$ TMP", "R$ 436,91")
+        for text in (good, swapped):
+            with self.subTest(text=text):
+                replies = iter([{"tool_calls": [search]}] + [{"content": json.dumps({"outcome": "answer", "text": text, "reason": None})}] * 3)
+                result = run_turn("Violão de nylon até mil no pix?", sender="5567998123456", model_client=lambda m, t: next(replies))
+                if text == good:
+                    self.assertEqual(result["text"], good)
+                else:
+                    self.assertNotEqual(result["text"], swapped)

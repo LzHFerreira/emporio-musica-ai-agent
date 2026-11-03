@@ -19,7 +19,7 @@ PRIVATE_KEYS = {
 
 def numbers_supported(text: str, evidence: list[Any]) -> bool:
     """Require every answer number to occur as a complete fact in result data."""
-    claimed = _numbers(text)
+    claimed = _numbers(re.sub(r"^\s*(?:[-*•]\s*)?\d{1,2}[.)](?=\s)", "", text, flags=re.MULTILINE))
     available = _evidence_numbers(evidence)
     return claimed.issubset(available)
 

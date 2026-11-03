@@ -103,7 +103,7 @@ def _catalog_rows_from(item):
 
 
 def _price_chunks(text: str) -> list[str]:
-    return re.split(r"\s+e\s+|;\s*|\.\s+|,\s+", text)
+    return re.split(r"\s+e\s+|;\s*|\.\s+|,\s+|\n(?=\s*(?:[-*•]|\d{1,2}[.)])\s)", text)
 
 
 def _price_mentions(text: str) -> list[tuple[str, str]]:
