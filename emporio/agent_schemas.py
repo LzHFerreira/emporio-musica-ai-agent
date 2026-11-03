@@ -24,9 +24,15 @@ def _function_arguments(function: Any) -> tuple[str, dict[str, Any]] | None:
     if not isinstance(name, str) or not _registered_name(name):
         return None
     arguments = _decode_object(raw)
-    if arguments is not None and type(arguments.get("max_price_brl")) is int:
+    if arguments is None:
+        return None
+    return name, _coerce_budget(arguments)
+
+
+def _coerce_budget(arguments: dict[str, Any]) -> dict[str, Any]:
+    if type(arguments.get("max_price_brl")) is int:
         arguments["max_price_brl"] = str(arguments["max_price_brl"])
-    return (name, arguments) if arguments is not None else None
+    return arguments
 
 
 def _registered_name(name: Any) -> bool:

@@ -62,14 +62,22 @@ SYSTEM_PROMPT = "\n".join(
 
 def terminal(content: Any) -> dict[str, Any] | None:
     """Parse the last terminal JSON object; answers may omit a null reason."""
-    starts = [m.start() for m in re.finditer(r'\{\s*"outcome"', content or "")]
     try:
-        value = json.JSONDecoder().raw_decode(content, starts[-1])[0]
+        value = _last_terminal_object(content)
     except (TypeError, IndexError, json.JSONDecodeError):
         return None
+    _default_reason(value)
+    return value if _terminal_valid(value) else None
+
+
+def _last_terminal_object(content: Any) -> Any:
+    starts = [m.start() for m in re.finditer(r'\{\s*"outcome"', content or "")]
+    return json.JSONDecoder().raw_decode(content, starts[-1])[0]
+
+
+def _default_reason(value: Any) -> None:
     if isinstance(value, dict) and value.get("outcome") != "handoff":
         value.setdefault("reason", None)
-    return value if _terminal_valid(value) else None
 
 
 def _terminal_valid(value: Any) -> bool:

@@ -112,6 +112,12 @@ uv run --env-file .env python manage.py evaluate_retrieval
 The tests exercise SQLite services, ownership, staff permissions, source publication/rollback, ingress, worker behavior and simulated delivery/recovery. Coverage must reach 95%. Provider responses in these tests are mocked. The eleven-case retrieval set was inspected during implementation; it is regression coverage rather than an independent generalization test.
 
 ```bash
+uv run --env-file .env python manage.py evaluate_model --runs 3
+```
+
+This sends the five development questions in `tests/fixtures/model_quality.json` to the configured live model and prints a JSON pass-rate report with every reply; it consumes provider quota. Pass/fail uses substring checks against source data, so review non-passing replies manually.
+
+```bash
 bash scripts/run_quality_gates.sh
 ```
 
