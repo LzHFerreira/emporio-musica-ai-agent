@@ -84,7 +84,22 @@ def _safe_text(text: str) -> bool:
         len(text) <= 2048
         and "<|" not in text
         and re.search(r"\b(?:produto|product)\s+#?\d+\b", plain_text(text)) is None
+        and not _degenerate(text)
     )
+
+
+def _degenerate(text: str) -> bool:
+    """Detect repeated 1-6 token loops and replies cut off at a trailing colon."""
+    tokens = [m.group() for m in re.finditer(r"\w+|([^\w\s])\1*", plain_text(text))]
+    looped = any(
+        tokens[i : i + n]
+        == tokens[i + n : i + 2 * n]
+        == tokens[i + 2 * n : i + 3 * n]
+        == tokens[i + 3 * n : i + 4 * n]
+        for n in range(1, 7)
+        for i in range(len(tokens) - 4 * n + 1)
+    )
+    return looped or re.search(r":[^\w.!?]*$", text.rstrip()) is not None
 
 
 def _claim_sources(text: str, kinds: set[str]) -> bool:
