@@ -178,8 +178,8 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         model, http = _client_for(body)
         with patch("emporio.agent_turn.output_supported", wraps=output_supported) as supported:
             result = run_turn("oi", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
-        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 1, 0))
-        supported.assert_called_once()
+        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 3, 0))
+        self.assertEqual(supported.call_count, 3)
         http.close()
 
     def test_untrusted_control_claim_still_runs_the_existing_output_guard(self):
@@ -189,6 +189,6 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         model, http = _client_for(body)
         with patch("emporio.agent_turn.output_supported", wraps=output_supported) as supported:
             result = run_turn("qual preço?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
-        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 1, 0))
-        supported.assert_called_once_with(claim, "answer", [], [])
+        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 3, 0))
+        supported.assert_called_with(claim, "answer", [], [])
         http.close()

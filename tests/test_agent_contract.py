@@ -55,7 +55,7 @@ class AgentTurnContractTests(TestCase):
         ])
         result = run_turn("Oi", sender="5567998123456", model_client=lambda m, t: next(outputs))
         self.assertEqual(result["text"], "Não consegui concluir sua consulta agora. Você pode tentar novamente ou pedir atendimento humano.")
-        self.assertEqual((result["model_requests"], result["tool_executions"]), (1, 0))
+        self.assertEqual((result["model_requests"], result["tool_executions"]), (2, 0))
         self.assertNotIn("raw unsafe", result["text"])
 
     def test_fifth_tool_call_is_never_executed_and_turn_stops_at_budget(self):
@@ -92,3 +92,14 @@ class AgentTurnContractTests(TestCase):
         text = '{"outcome":"handoff","reason":"unsupported","text":"Não vendemos pizza, só instrumentos."}'
         result = run_turn("Vocês vendem pizza?", sender="5567998123456", model_client=Mock(return_value={"content": text}))
         self.assertEqual(result["outcome"], "handoff")
+
+    def test_rejected_reply_is_retried_with_corrective_feedback(self):
+        replies = [{"content": '{"outcome":"answer","text":"O Takamine custa R$ 1,00.","reason":null}'}, {"content": '{"outcome":"answer","text":"Oi! Como posso ajudar?","reason":null}'}]
+        seen = []
+        def model(messages, tools):
+            seen.append(list(messages))
+            return replies[len(seen) - 1]
+        result = run_turn("Oi", sender="5567998123456", model_client=model)
+        self.assertEqual(result["text"], "Oi! Como posso ajudar?")
+        self.assertEqual(result["model_requests"], 2)
+        self.assertTrue(any(m["role"] == "user" and "rejeitada" in m["content"] for m in seen[1]))

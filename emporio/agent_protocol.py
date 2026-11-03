@@ -8,6 +8,11 @@ FAILURE_TEXT = (
     "Não consegui concluir sua consulta agora. Você pode tentar novamente "
     "ou pedir atendimento humano."
 )
+REJECTED_TEXT = (
+    "Sua resposta anterior foi rejeitada pela verificação da aplicação. Use apenas fatos "
+    "e números retornados pelas ferramentas, sem repetições, e responda novamente somente "
+    "com o objeto JSON final."
+)
 HANDOFF_TEXT = "Encaminhei sua conversa para atendimento humano."
 SYSTEM_PROMPT = "\n".join(
     (

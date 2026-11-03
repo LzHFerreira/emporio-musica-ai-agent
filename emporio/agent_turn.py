@@ -6,7 +6,14 @@ from typing import Any
 from django.db.utils import DatabaseError
 
 from emporio.agent_output import output_supported
-from emporio.agent_protocol import FAILURE_TEXT, HANDOFF_TEXT, SYSTEM_PROMPT, result, terminal
+from emporio.agent_protocol import (
+    FAILURE_TEXT,
+    HANDOFF_TEXT,
+    REJECTED_TEXT,
+    SYSTEM_PROMPT,
+    result,
+    terminal,
+)
 from emporio.agent_schemas import TOOL_SCHEMAS
 from emporio.agent_tools import ToolHandler, execute_calls
 from emporio.catalog.models import SourceSnapshot
@@ -81,10 +88,10 @@ def _step(response, messages, sender, model_client, version, handlers, state):
             response.get("provider_content"),
         )
         return done, None
-    return _terminal_result(response.get("content"), state, version)
+    return _terminal_result(response.get("content"), messages, state, version)
 
 
-def _terminal_result(content, state, version):
+def _terminal_result(content, messages, state, version):
     answer = terminal(content)
     if (
         answer is None
@@ -93,7 +100,11 @@ def _terminal_result(content, state, version):
             answer["text"], answer["outcome"], state["sources"], state["evidence"]
         )
     ):
-        return False, None
+        reply = content if isinstance(content, str) else ""
+        messages.extend(
+            [{"role": "assistant", "content": reply}, {"role": "user", "content": REJECTED_TEXT}]
+        )
+        return True, None
     text = HANDOFF_TEXT if answer["outcome"] == "handoff" else answer["text"]
     return False, _envelope(answer, text, state, version)
 
