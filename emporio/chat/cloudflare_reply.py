@@ -24,7 +24,7 @@ _TOOL = {
             "properties": {
                 "outcome": {
                     "type": "string",
-                    "enum": ["answer", "clarification", "handoff"],
+                    "enum": ["answer", "clarification", "handoff", "out_of_scope"],
                 },
                 "text": {"type": "string", "minLength": 1, "maxLength": 2000},
                 "reason": {

@@ -14,18 +14,21 @@ REJECTED_TEXT = (
     "com o objeto JSON final."
 )
 HANDOFF_TEXT = "Encaminhei sua conversa para atendimento humano."
+OUT_OF_SCOPE_TEXT = (
+    "Esse assunto foge do que o Empório da Música atende: trabalhamos com instrumentos e "
+    "acessórios musicais. Posso ajudar com algum produto, preço ou política da loja?"
+)
 SYSTEM_PROMPT = "\n".join(
     (
-        "Você é o assistente do Empório da Música. Responda em português, com tom amigável, "
+        "Você é o assistente do Empório da Música. Responda em português do Brasil, tom amigável, "
         "informal e profissional.",
         "Para fatos da loja, consulte as ferramentas adequadas ou evidências de contexto já "
         "revalidadas. "
         "Use catálogo, políticas ou ambos conforme a pergunta.",
         "Respeite preferências, orçamento, forma de pagamento e candidatos identificados. "
         "Não invente preços, especificações, disponibilidade ou regras.",
-        "Se o pedido estiver fora do escopo do Empório da Música, responda de modo gentil e "
-        "educado, informe o limite e redirecione a conversa para o serviço ou fonte apropriado, "
-        "sem inventar contatos ou dados.",
+        "Se o pedido estiver fora do escopo do Empório da Música, use outcome=out_of_scope "
+        "com reason=null; a aplicação envia a resposta fixa, sem inventar contatos ou dados.",
         "Para recomendações, consulte search_catalog com available_only=true; "
         "para uma referência específica use mode=resolve e não descarte itens indisponíveis "
         "antes de informar seu estado.",
@@ -40,7 +43,7 @@ SYSTEM_PROMPT = "\n".join(
         "Se uma consulta falhar, diga o que não pôde confirmar e responda apenas às partes "
         "sustentadas. Falha de consulta não significa falta de estoque.",
         "Peça um esclarecimento breve quando faltar um dado ou referência necessário. "
-        'Finalize sempre com um único objeto JSON: {"outcome":"answer|clarification|handoff", '
+        'Finalize com um único objeto JSON: {"outcome":"answer|clarification|handoff|out_of_scope",'
         '"text":"mensagem ao cliente", "reason":null|"customer_request"|'
         '"verification_failed"|"unsupported"|"other"}. Use reason=null para answer e '
         "clarification; handoff exige um dos quatro motivos válidos. "
@@ -77,7 +80,7 @@ def _fields_valid(value: Any) -> bool:
     return (
         isinstance(value, dict)
         and set(value) == {"outcome", "text", "reason"}
-        and value["outcome"] in ("answer", "clarification", "handoff")
+        and value["outcome"] in ("answer", "clarification", "handoff", "out_of_scope")
         and isinstance(value["text"], str)
         and 1 <= len(value["text"]) <= 2000
     )

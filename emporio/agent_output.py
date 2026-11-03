@@ -85,7 +85,13 @@ def _safe_text(text: str) -> bool:
         and "<|" not in text
         and re.search(r"\b(?:produto|product)\s+#?\d+\b", plain_text(text)) is None
         and not _degenerate(text)
+        and not _english_leak(text)
     )
+
+
+def _english_leak(text: str) -> bool:
+    words = set(re.findall(r"[a-z']+", text.lower()))
+    return len(words & set("the is and you with this that are it's for your".split())) >= 2
 
 
 def _degenerate(text: str) -> bool:

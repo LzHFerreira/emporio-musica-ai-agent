@@ -23,3 +23,11 @@ def test_normal_greetings_and_offers_remain_supported():
     ]
     for text in normal:
         assert output_supported(text, "answer", SOURCES, []), f"rejected: {text!r}"
+
+
+def test_english_leak_is_rejected_but_english_product_names_pass():
+    assert not output_supported(
+        "O Takamine GD20 está disponível, and this is a great value for you!", "answer", SOURCES, []
+    )
+    assert output_supported("O Takamine GD20 Dreadnought Natural é ótimo para fingerstyle.", "answer", SOURCES, [])
+    assert output_supported("Promoção Black Friday encerrada.", "answer", SOURCES, [])

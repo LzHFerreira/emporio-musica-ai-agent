@@ -17,7 +17,7 @@ GEMMA = "@cf/google/gemma-4-26b-a4b-it"
 REPLY_SCHEMA = {
     "type": "object",
     "properties": {
-        "outcome": {"type": "string", "enum": ["answer", "clarification", "handoff"]},
+        "outcome": {"type": "string", "enum": ["answer", "clarification", "handoff", "out_of_scope"]},
         "text": {"type": "string", "minLength": 1, "maxLength": 2000},
         "reason": {"type": ["string", "null"], "enum": [None, "customer_request", "verification_failed", "unsupported", "other"]},
     },

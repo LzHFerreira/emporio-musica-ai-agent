@@ -9,6 +9,7 @@ from emporio.agent_output import output_supported
 from emporio.agent_protocol import (
     FAILURE_TEXT,
     HANDOFF_TEXT,
+    OUT_OF_SCOPE_TEXT,
     REJECTED_TEXT,
     SYSTEM_PROMPT,
     result,
@@ -95,7 +96,7 @@ def _terminal_result(content, messages, state, version):
     answer = terminal(content)
     if (
         answer is None
-        or answer["outcome"] != "handoff"
+        or answer["outcome"] not in ("handoff", "out_of_scope")
         and not output_supported(
             answer["text"], answer["outcome"], state["sources"], state["evidence"]
         )
@@ -105,7 +106,9 @@ def _terminal_result(content, messages, state, version):
             [{"role": "assistant", "content": reply}, {"role": "user", "content": REJECTED_TEXT}]
         )
         return True, None
-    text = HANDOFF_TEXT if answer["outcome"] == "handoff" else answer["text"]
+    text = {"handoff": HANDOFF_TEXT, "out_of_scope": OUT_OF_SCOPE_TEXT}.get(
+        answer["outcome"], answer["text"]
+    )
     return False, _envelope(answer, text, state, version)
 
 

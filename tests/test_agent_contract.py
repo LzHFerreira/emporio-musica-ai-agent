@@ -116,3 +116,11 @@ class AgentTurnContractTests(TestCase):
                     self.assertEqual(result["text"], good)
                 else:
                     self.assertNotEqual(result["text"], swapped)
+
+    def test_out_of_scope_reply_uses_fixed_portuguese_text(self):
+        from emporio.agent_protocol import OUT_OF_SCOPE_TEXT
+
+        model = Mock(return_value={"content": '{"outcome":"out_of_scope","text":"Não vendemos pizza.","reason":null}'})
+        result = run_turn("Vocês vendem pizza?", sender="5567998123456", model_client=model)
+        self.assertEqual(result["outcome"], "out_of_scope")
+        self.assertEqual(result["text"], OUT_OF_SCOPE_TEXT)
