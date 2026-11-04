@@ -122,6 +122,7 @@
             "quanto"
           ]
         ],
+        "expect": "clarification",
         "forbid": [
           "martin",
           "taylor",
@@ -474,6 +475,7 @@
             "3321"
           ]
         ],
+        "expect": "abstain",
         "forbid": [
           "sim, temos aula",
           "temos aulas",
