@@ -23,7 +23,7 @@ def _assert_current_user_stays_untrusted(messages, injected):
 
 def _assert_customer_tools_are_bounded(tools):
     names = {tool["function"]["name"] for tool in tools}
-    assert names == {"search_catalog", "lookup_public_policy", "list_own_orders", "get_own_order_status"}
+    assert names == {"search_catalog", "lookup_public_policy", "list_own_orders", "get_own_order_status", "read_store_manual"}
     assert all(not {"sender", "customer_id", "snapshot_version"} & set(tool["function"]["parameters"]["properties"]) for tool in tools)
 
 

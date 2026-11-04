@@ -137,7 +137,7 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         model, http = _client_for(body, model="@cf/zai-org/glm-4.7-flash", capture=requests)
         result = model([{"role": "system", "content": "trusted"}], copy.deepcopy(TOOL_SCHEMAS))
         payload = requests[0]
-        self.assertEqual(len(payload["tools"]), 4)
+        self.assertEqual(len(payload["tools"]), 5)
         catalog = next(tool["function"] for tool in payload["tools"] if tool["function"]["name"] == "search_catalog")
         self.assertEqual(catalog["parameters"]["properties"]["query"]["default"], "")
         self.assertNotIn("query", catalog["parameters"].get("required", []))

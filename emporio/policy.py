@@ -3,6 +3,7 @@
 from typing import Any
 
 from emporio.policy_lookup import lookup_public_policy as _lookup_public_policy
+from emporio.policy_lookup import read_store_manual
 from emporio.sources.policy_pdf import verify_snapshot_pdf
 
 
@@ -15,4 +16,4 @@ def lookup_public_policy(
     )
 
 
-__all__ = ["lookup_public_policy"]
+__all__ = ["lookup_public_policy", "read_store_manual"]

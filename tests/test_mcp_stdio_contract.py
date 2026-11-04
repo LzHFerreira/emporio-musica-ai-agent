@@ -105,7 +105,7 @@ class MCPStdioContractTests(SimpleTestCase):
         requests = [{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "search_catalog", "arguments": {"query": "Takamine GD20"}}}, {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "search_catalog", "arguments": {"query": "no such instrument zxqv-9281"}}}]
         replies = self._session(requests)
         tools = replies[2]["result"]["tools"]
-        self.assertEqual({tool["name"] for tool in tools}, {"search_catalog", "lookup_public_policy", "list_own_orders", "get_own_order_status"})
+        self.assertEqual({tool["name"] for tool in tools}, {"search_catalog", "lookup_public_policy", "list_own_orders", "get_own_order_status", "read_store_manual"})
         expected = {item["function"]["name"]: item["function"]["parameters"] for item in json.loads((ROOT / "docs/tool-schemas.json").read_text())}
         self.assertEqual({tool["name"]: tool["inputSchema"] for tool in tools}, expected)
         forbidden = {"sender", "customer_id", "provider", "model", "snapshot_version"}
@@ -118,7 +118,7 @@ class MCPStdioContractTests(SimpleTestCase):
 
     def test_stdio_exits_cleanly_after_initialized_list_and_eof(self):
         result = self._session([{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}])
-        self.assertEqual(len(result[2]["result"]["tools"]), 4)
+        self.assertEqual(len(result[2]["result"]["tools"]), 5)
 
     def test_stdio_calls_keep_sender_trusted_and_reject_forged_arguments(self):
         calls = [{"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "list_own_orders", "arguments": {}}}, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "list_own_orders", "arguments": {"sender": "5567998123456", "page": 1}}}, {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "get_own_order_status", "arguments": {"order_id": 4, "customer_id": 1}}}]

@@ -1,4 +1,5 @@
 [
+  {"type": "function", "function": {"name": "read_store_manual", "description": "Lê o manual de políticas da loja completo, com o número de cada página.", "parameters": {"type": "object", "properties": {}, "additionalProperties": false}}},
   {
     "type": "function",
     "function": {

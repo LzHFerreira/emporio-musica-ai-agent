@@ -8,7 +8,7 @@ from emporio.agent_turn import run_turn as _run_turn
 from emporio.catalog import search_catalog
 from emporio.orders_access import get_own_order_status as _get_order
 from emporio.orders_access import list_own_orders as _list_orders
-from emporio.policy import lookup_public_policy
+from emporio.policy import lookup_public_policy, read_store_manual
 
 
 class _TurnOptions(TypedDict):
@@ -56,6 +56,7 @@ def _handlers() -> dict[str, ToolHandler]:
     return {
         "search_catalog": _catalog_tool,
         "lookup_public_policy": _policy_tool,
+        "read_store_manual": lambda _a, _s, v: read_store_manual(snapshot_version=v or None),
         "list_own_orders": _list_tool,
         "get_own_order_status": _status_tool,
     }

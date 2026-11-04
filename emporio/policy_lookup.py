@@ -6,7 +6,8 @@ from django.db.utils import DatabaseError
 
 from emporio.catalog.models import SourceSnapshot
 from emporio.policy_ranking import rank_passages
-from emporio.sources.policy_pdf import verify_snapshot_pdf
+from emporio.sources.draft_data import _bundle_path
+from emporio.sources.policy_pdf import extract_pdf_pages, verify_snapshot_pdf
 from emporio.sources.read import SourceImportError
 
 
@@ -20,6 +21,17 @@ def lookup_public_policy(
         return _lookup_active(query, topic, snapshot_version, verifier)
     except (DatabaseError, AttributeError, TypeError, KeyError, SourceImportError, OSError):
         return _result("error", error="source_unavailable")
+
+
+def read_store_manual(*, snapshot_version: str | None = None, verifier=None) -> dict[str, Any]:
+    """Return every page of the active reviewed policy PDF."""
+    try:
+        snapshot = _select_snapshot(snapshot_version)
+        (verifier or verify_snapshot_pdf)(snapshot)
+        pages = extract_pdf_pages((_bundle_path(snapshot) / "políticas_da_loja.pdf").read_bytes())
+    except (DatabaseError, AttributeError, TypeError, KeyError, SourceImportError, OSError):
+        return _result("error", error="source_unavailable")
+    return _result("found", data=[{"page": n, "text": t} for n, t in enumerate(pages, 1)])
 
 
 def _valid_arguments(query, topic, snapshot_version):

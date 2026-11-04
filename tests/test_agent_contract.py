@@ -34,7 +34,7 @@ class AgentTurnContractTests(TestCase):
         self.assertEqual((result["outcome"], len(seen)), ("answer", 2))
         self.assertEqual({s["type"] for s in result["sources"]}, {"catalog", "policy"})
         schemas = [tool["function"]["parameters"]["properties"] for tool in seen[0][1]]
-        self.assertEqual({tool["function"]["name"] for tool in seen[0][1]}, {"search_catalog", "lookup_public_policy", "list_own_orders", "get_own_order_status"})
+        self.assertEqual({tool["function"]["name"] for tool in seen[0][1]}, {"search_catalog", "lookup_public_policy", "list_own_orders", "get_own_order_status", "read_store_manual"})
         self.assertTrue(all(not {"sender", "customer_id", "snapshot_version"} & set(schema) for schema in schemas))
         self.assertNotIn("5567998123456", json.dumps(seen))
 
