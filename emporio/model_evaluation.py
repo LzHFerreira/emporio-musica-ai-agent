@@ -15,14 +15,28 @@ FAIL_SAFE_TEXTS = {FAILURE_TEXT, HANDOFF_TEXT}
 NEGATION = re.compile(r"\b(?:não|nao|nunca|nenhum|nenhuma)\b", re.IGNORECASE)
 CLAUSE_BREAK = re.compile(r"[.;!?\n]+|,\s+")
 DIGIT = re.compile(r"\d")
+SENTENCE_BREAK = re.compile(r"[;!?\n]|\.(?!\d)")
 
 
 def verdict(case: dict[str, Any], text: str) -> str:
-    """Classify a reply; negated digit facts fail, text-only terms are exempt (out-of-scope)."""
+    """Classify a reply; bind and ordered cases must hold, and negated facts fail.
+
+    A term is negated when every clause containing it has a negation word; terms that are
+    negation words themselves are exempt.
+    """
     if text in FAIL_SAFE_TEXTS:
         return "FAIL-SAFE"
-    passed = _checks_pass(case, _normalize(text)) and not _negated_fact(case, text)
-    return "PASS" if passed else "FAIL-CHECK"
+    return "PASS" if _passes(case, text) else "FAIL-CHECK"
+
+
+def _passes(case: dict[str, Any], text: str) -> bool:
+    normalized = _normalize(text)
+    return (
+        _checks_pass(case, normalized)
+        and _bind_pass(case, text)
+        and _ordered_pass(case, normalized)
+        and not _negated_fact(case, text)
+    )
 
 
 def evaluate_model(path: Path, runs: int, model_client: Any) -> dict[str, Any]:
@@ -45,11 +59,37 @@ def _normalize(text: str) -> str:
     return text.replace(".", "").replace(" ", "").lower()
 
 
-def _hits(item: str, normalized: str) -> bool:
+def _find(item: str, normalized: str) -> re.Match[str] | None:
     term = re.escape(_normalize(item))
     if DIGIT.search(item):
         term = rf"(?<!\d){term}(?!\d)"
-    return re.search(term, normalized) is not None
+    return re.search(term, normalized)
+
+
+def _hits(item: str, normalized: str) -> bool:
+    return _find(item, normalized) is not None
+
+
+def _bind_pass(case: dict[str, Any], text: str) -> bool:
+    sentences = [_normalize(sentence) for sentence in SENTENCE_BREAK.split(text)]
+    pairs = list(zip(sentences, ["", *sentences], strict=False))
+    return all(_bound(a, b, pairs) for a, b in case.get("bind", []))
+
+
+def _bound(a: str, b: str, pairs: list[tuple[str, str]]) -> bool:
+    return any(_hits(b, now) and (_hits(a, now) or _hits(a, before)) for now, before in pairs)
+
+
+def _ordered_pass(case: dict[str, Any], normalized: str) -> bool:
+    spots = [_first_spot(group, normalized) for group in case.get("ordered", [])]
+    return all(spot >= 0 for spot in spots) and all(
+        a < b for a, b in zip(spots, spots[1:], strict=False)
+    )
+
+
+def _first_spot(group: list[str], normalized: str) -> int:
+    spots = [match.start() for item in group if (match := _find(item, normalized))]
+    return min(spots, default=-1)
 
 
 def _checks_pass(case: dict[str, Any], normalized: str) -> bool:
@@ -62,7 +102,7 @@ def _checks_pass(case: dict[str, Any], normalized: str) -> bool:
 
 def _negated_fact(case: dict[str, Any], text: str) -> bool:
     terms = [*case["must"], *chain.from_iterable(case["any_groups"])]
-    return any(_only_negated(term, text) for term in terms if DIGIT.search(term))
+    return any(_only_negated(term, text) for term in terms if not NEGATION.search(term))
 
 
 def _only_negated(item: str, text: str) -> bool:

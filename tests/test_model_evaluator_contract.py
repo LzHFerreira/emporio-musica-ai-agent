@@ -83,7 +83,7 @@ class ModelEvaluatorCommandTests(SimpleTestCase):
         return json.loads(output.getvalue()), turn
 
     def test_command_reports_pass_rate_for_every_case_and_run(self):
-        reply = {"text": "R$ 2.199,00", "model_requests": 1}
+        reply = {"text": "O Takamine GD20 custa R$ 2.199,00.", "model_requests": 1}
         report, turn = self._run(lambda *args, **kwargs: reply)
         self.assertEqual(report["case_count"], 9)
         self.assertEqual(report["total"], 18)

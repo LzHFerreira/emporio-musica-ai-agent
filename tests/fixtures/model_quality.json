@@ -1,11 +1,11 @@
 [
-  {"question": "Quanto custa o Takamine GD20?", "must": ["2199,00"], "any_groups": [], "forbid": []},
+  {"question": "Quanto custa o Takamine GD20?", "must": ["2199,00"], "any_groups": [], "forbid": [], "bind": [["takamine", "2199,00"]]},
   {"question": "Quero um violão de nylon até mil reais, pagando no pix. Tem algum?", "must": [], "any_groups": [["408,41", "436,91", "806,55", "996,55"]], "forbid": []},
-  {"question": "O Takamine GD20 tá disponível e posso devolver se me arrepender?", "must": ["2199,00", "7"], "any_groups": [["dias"]], "forbid": ["esgotado", "indisponível", "sem estoque"]},
-  {"question": "Qual o horário de vocês no sábado?", "must": [], "any_groups": [["09:00", "9:00", "9h"], ["13:00", "13h"]], "forbid": []},
+  {"question": "O Takamine GD20 tá disponível e posso devolver se me arrepender?", "must": ["2199,00"], "any_groups": [["7dias", "7(sete)dias", "setedias"]], "forbid": ["esgotado", "indisponível", "sem estoque"], "bind": [["takamine", "2199,00"]]},
+  {"question": "Qual o horário de vocês no sábado?", "must": [], "any_groups": [["09:00", "9:00", "9h"], ["13:00", "13h"]], "forbid": [], "ordered": [["09:00", "9:00", "9h"], ["13:00", "13h"]]},
   {"question": "Vocês abrem no domingo?", "must": [], "any_groups": [["fechado", "fechada", "não abrimos", "não abre", "não funciona"]], "forbid": []},
-  {"question": "Aceitam cartão parcelado?", "must": [], "any_groups": [["12x", "12 vezes", "doze vezes"], ["sem juros"]], "forbid": ["não parcelamos", "não aceitamos cartão"]},
+  {"question": "Aceitam cartão parcelado?", "must": [], "any_groups": [["12x", "12 vezes", "doze vezes"], ["sem juros"], ["100,00", "r$100"]], "forbid": ["não parcelamos", "não aceitamos cartão", "qualquer valor", "sem parcela mínima"]},
   {"question": "Posso retirar meu pedido na loja?", "must": [], "any_groups": [["não tenho", "não temos", "não encontrei", "não há", "não consta", "não possuo"], ["atendente", "humano", "atendimento", "whatsapp"]], "forbid": ["poderetirar", "podeserretirado", "podemosretirar"]},
-  {"question": "Quero um violão de nylon até mil reais no pix, tem o Yamaha C40 e o Giannini GN-15?", "must": ["569,91", "654,55"], "any_groups": [], "forbid": []},
+  {"question": "Quero um violão de nylon até mil reais no pix, tem o Yamaha C40 e o Giannini GN-15?", "must": ["569,91", "654,55"], "any_groups": [], "forbid": [], "bind": [["yamaha", "569,91"], ["giannini", "654,55"]]},
   {"question": "Vocês vendem pizza?", "must": [], "any_groups": [["foge do que o Empório da Música atende", "não vendemos", "não vende"]], "forbid": ["13:00"]}
 ]

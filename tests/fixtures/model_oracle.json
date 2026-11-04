@@ -1,0 +1,13 @@
+[
+  {"question": "Quanto custa o Takamine GD20?", "label": "wrong", "reply": "O Yamaha C40 custa R$ 2.199,00."},
+  {"question": "Qual o horário de vocês no sábado?", "label": "wrong", "reply": "No sábado abrimos às 13:00 e fechamos às 09:00."},
+  {"question": "Vocês abrem no domingo?", "label": "wrong", "reply": "Domingo não ficamos fechados; abrimos normalmente."},
+  {"question": "Vocês abrem no domingo?", "label": "wrong", "reply": "Abrimos aos domingos."},
+  {"question": "Aceitam cartão parcelado?", "label": "wrong", "reply": "Parcelamos em 12x sem juros para qualquer valor, sem parcela mínima."},
+  {"question": "O Takamine GD20 tá disponível e posso devolver se me arrepender?", "label": "wrong", "reply": "O Takamine GD20 está disponível por R$ 2.199,00 e o prazo para devolver é de 7 anos."},
+  {"question": "Quanto custa o Takamine GD20?", "label": "right", "reply": "O Takamine GD20 custa R$ 2.199,00."},
+  {"question": "Qual o horário de vocês no sábado?", "label": "right", "reply": "No sábado abrimos das 09:00 às 13:00."},
+  {"question": "Vocês abrem no domingo?", "label": "right", "reply": "Não, aos domingos ficamos fechados."},
+  {"question": "Aceitam cartão parcelado?", "label": "right", "reply": "Sim! Parcelamos em até 12x sem juros, com parcela mínima de R$ 100,00."},
+  {"question": "O Takamine GD20 tá disponível e posso devolver se me arrepender?", "label": "right", "reply": "Sim, o Takamine GD20 está disponível por R$ 2.199,00. Em compras online, você pode devolver em até 7 dias corridos após o recebimento."}
+]
