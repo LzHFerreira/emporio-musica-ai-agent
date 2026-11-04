@@ -68,7 +68,7 @@ def test_current_user_injection_stays_outside_trusted_prompt_and_tools():
     def model(messages, tools):
         captured["messages"] = messages
         captured["tools"] = tools
-        return {"content": json.dumps({"outcome": "answer", "text": "Oi!", "reason": None})}
+        return {"content": json.dumps({"outcome": "answer", "text": "Olá! Sou o assistente do Empório da Música. Posso ajudar com algum produto?", "reason": None})}
 
     run_turn(injected, sender="5567998123456", model_client=model, snapshot_version="v1", handlers={})
     _assert_current_user_stays_untrusted(captured["messages"], injected)

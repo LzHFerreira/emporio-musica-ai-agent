@@ -77,7 +77,7 @@ class WorkerStateContractTests(TestCase):
 
     def test_unknown_send_outcome_is_not_retried_on_worker_restart(self):
         self.enqueue()
-        model = Mock(return_value={"content": '{"outcome":"answer","text":"Olá!","reason":null}'})
+        model = Mock(return_value={"content": '{"outcome":"answer","text":"Olá! Sou o assistente do Empório da Música. Posso ajudar com algum produto?","reason":null}'})
         send = Mock(side_effect=TimeoutError("acceptance unknown"))
         reply = process_next(model_client=model, send_client=send)
         self.assertEqual(reply.state, "unknown")

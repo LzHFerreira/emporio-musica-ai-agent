@@ -111,7 +111,7 @@ class InteractChatReviewTests(TransactionTestCase):
     @override_settings(MODEL_PROVIDER="ollama", OPENROUTER_API_KEY="", OLLAMA_BASE_URL="http://localhost:11434/v1", OLLAMA_MODEL="qwen3:4b")
     def test_local_provider_interaction_needs_no_cloud_key_and_closes_client(self):
         requests = []
-        answer = {"outcome": "answer", "text": "A loja abre às 09h.", "reason": None}
+        answer = {"outcome": "answer", "text": "Olá! Sou o assistente do Empório da Música. Posso ajudar com algum produto?", "reason": None}
         def respond(request):
             requests.append(request)
             return httpx.Response(200, json={"choices": [{"message": {"role": "assistant", "content": json.dumps(answer)}, "finish_reason": "stop"}], "model": "qwen3:4b"})

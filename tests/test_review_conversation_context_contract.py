@@ -50,7 +50,7 @@ class ConversationContextFixture(TransactionTestCase):
 
         def model(messages, tools):
             seen.extend(messages)
-            return {"content": json.dumps({"outcome": "answer", "text": "Entendi.", "reason": None})}
+            return {"content": json.dumps({"outcome": "answer", "text": "Olá! Sou o assistente do Empório da Música. Posso ajudar com algum produto?", "reason": None})}
 
         process_next(model_client=model, send_client=lambda reply: "accepted")
         return seen

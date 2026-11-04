@@ -35,7 +35,11 @@ def _claims_supported(text, kinds, evidence):
     plain = plain_text(text)
     if _scope_only_response(plain):
         return specific_claims_supported(plain, kinds, evidence)
-    return _claim_sources(plain, kinds) and specific_claims_supported(plain, kinds, evidence)
+    return (
+        bool(evidence)
+        and _claim_sources(plain, kinds)
+        and specific_claims_supported(plain, kinds, evidence)
+    )
 
 
 def _scope_only_response(text):
@@ -53,6 +57,7 @@ def _safe_clarification(text: str) -> bool:
     plain = plain_text(text).strip()
     return (
         text.rstrip().endswith("?")
+        and re.search(r"[.!]\s", text) is None
         and _is_preference_question(plain)
         and not _has_store_claim(plain)
     )

@@ -2,6 +2,9 @@ from emporio.agent_output import output_supported
 
 
 SOURCES = [{"type": "catalog"}, {"type": "policy"}]
+EVIDENCE = [{"outcome": "found", "data": [
+        {"name": "Takamine GD20", "payable_price_brl": "2199.00"}
+    ]}]
 DEGENERATE_REPLIES = [
     "fingerstyle, fingerstyle, fingerstyle, fingerstyle, fingerstyle",
     "análise de devolução: análise de devolução: análise de devolução: análise de devolução:",
@@ -29,5 +32,5 @@ def test_english_leak_is_rejected_but_english_product_names_pass():
     assert not output_supported(
         "O Takamine GD20 está disponível, and this is a great value for you!", "answer", SOURCES, []
     )
-    assert output_supported("O Takamine GD20 Dreadnought Natural é ótimo para fingerstyle.", "answer", SOURCES, [])
-    assert output_supported("Promoção Black Friday encerrada.", "answer", SOURCES, [])
+    assert output_supported("O Takamine GD20 Dreadnought Natural é ótimo para fingerstyle.", "answer", SOURCES, EVIDENCE)
+    assert output_supported("Promoção Black Friday encerrada.", "answer", SOURCES, EVIDENCE)
