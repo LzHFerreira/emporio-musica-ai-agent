@@ -9,14 +9,18 @@ from emporio.catalog.models import Product, SourceSnapshot
 from emporio.catalog.normalize import normalize_text
 from emporio.policy_intents import STOP_WORDS as POLICY_STOP_WORDS
 
-STOP_WORDS = POLICY_STOP_WORDS | {"pra", "quero"}
+STOP_WORDS = POLICY_STOP_WORDS | set(
+    "pra quero ate reais real rs pix boleto credito debito cartao".split()
+)
 INTERNAL_ID_PATTERN = re.compile(r"(?:[0-9]+|(?:produto|product|id) [0-9]+)")
 
 
 def catalog_query(snapshot: SourceSnapshot, arguments: dict[str, Any]):
     """Apply text, category, price, availability, and stable ranking in SQLite."""
     query = normalize_text(str(arguments["query"]))
-    tokens = [t for t in query.split() if t not in STOP_WORDS] or query.split()
+    budget = arguments["price_cents"] is not None
+    tokens = [t for t in query.split() if t not in STOP_WORDS and not (budget and t.isdigit())]
+    tokens = tokens or query.split()
     products = (
         Product.objects.filter(snapshot=snapshot)
         .select_related("category")
