@@ -32,3 +32,15 @@ class RenderedFactsContractTests(TestCase):
         r, _ = run([final(["catalog-9"])] * 5)
         self.assertNotIn("catalog-9", r["text"])
         self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+    def test_price_in_text_with_facts_rejects_draft(self):
+        r, _ = run([final(["catalog-1"], "Está disponível por R$ 799,90, veja:")] * 5)
+        self.assertNotIn("Está disponível por R$ 799,90", r["text"])
+        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+    def test_stock_claim_in_text_with_facts_rejects_draft(self):
+        r, _ = run([final(["catalog-1"], "Temos em estoque:")] * 5)
+        self.assertNotIn("Temos em estoque", r["text"])
+        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+    def test_neutral_text_with_facts_renders_line(self):
+        r, _ = run([final(["catalog-1"], "Encontrei este modelo:")])
+        self.assertIn("Encontrei este modelo:", r["text"])
+        self.assertIn("Giannini GF-3D Dreadnought Sunburst: sem estoque no momento", r["text"])

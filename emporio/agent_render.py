@@ -3,6 +3,10 @@
 import re
 from decimal import Decimal, InvalidOperation
 
+from emporio.agent_claims import plain_text
+
+UNRENDERED_CLAIM = re.compile(r"r\$\s*\d|\b\d+,\d{2}\b|estoque|disponi|esgotad")
+
 LABELS = {
     "available": "disponível em estoque",
     "temporarily_unavailable": "sem estoque no momento",
@@ -38,6 +42,8 @@ def with_facts(answer: dict | None, evidence: list[dict]) -> dict | None:
     refs = [r for i in evidence for r in i.get("data", []) if isinstance(r, dict) and "ref" in r]
     rows = {r["ref"]: r for r in refs}
     if any(ref not in rows for ref in answer["facts"]):
+        return None
+    if UNRENDERED_CLAIM.search(plain_text(answer["text"])):
         return None
     lines = [_line(rows[k]) for k in answer["facts"]]
     rendered = {k: v for k, v in answer.items() if k != "facts"}
