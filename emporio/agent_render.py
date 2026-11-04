@@ -37,13 +37,15 @@ def with_facts(answer: dict | None, evidence: list[dict]) -> dict | None:
     """Append one availability line per fact ref; return None when a ref is unknown."""
     if answer is None or re.search(r"catalog-\d+", answer.get("text", ""), re.IGNORECASE):
         return None
-    if "facts" not in answer:
-        return answer
     refs = [r for i in evidence for r in i.get("data", []) if isinstance(r, dict) and "ref" in r]
     rows = {r["ref"]: r for r in refs}
-    if any(ref not in rows for ref in answer["facts"]):
+    if UNRENDERED_CLAIM.search(plain_text(answer["text"])) and any(
+        ref.startswith("catalog-") for ref in rows
+    ):
         return None
-    if UNRENDERED_CLAIM.search(plain_text(answer["text"])):
+    if "facts" not in answer:
+        return answer
+    if any(ref not in rows for ref in answer["facts"]):
         return None
     lines = [_line(rows[k]) for k in answer["facts"]]
     rendered = {k: v for k, v in answer.items() if k != "facts"}

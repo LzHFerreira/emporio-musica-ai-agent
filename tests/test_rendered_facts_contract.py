@@ -11,6 +11,11 @@ def run(replies, args={"query": "Giannini GF-3D"}):
     seen, it = [], iter(replies)
     client = lambda msgs, tools: seen.append(list(msgs)) or next(it, replies[-1])
     return run_turn("Tem Giannini GF-3D?", sender=SENDER, model_client=client), seen
+def plain_turn(replies, text):
+    it = iter(replies)
+    return run_turn("q", sender=SENDER, model_client=lambda m, t: next(it, {"content": j({"outcome": "answer", "text": text, "reason": None})}))
+def plain_run(args, text):
+    return plain_turn([{"tool_calls": [tool_call("search_catalog", args)]}], text)
 class RenderedFactsContractTests(TestCase):
     def setUp(self): call_command("load_sources", source_dir=str(DATA_DIR), verbosity=0)
     def test_valid_ref_renders_catalog_line(self):
@@ -49,3 +54,22 @@ class RenderedFactsContractTests(TestCase):
         r, _ = run([final(["catalog-1"], "Encontrei este modelo:")])
         self.assertIn("Encontrei este modelo:", r["text"])
         self.assertIn("Giannini GF-3D Dreadnought Sunburst: sem estoque no momento", r["text"])
+    def test_stock_text_without_facts_is_rejected(self):
+        r = plain_run({"query": "Giannini GF-3D"}, "O Giannini GF-3D está sem estoque no momento.")
+        self.assertNotIn("O Giannini GF-3D está sem estoque no momento.", r["text"])
+        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+    def test_price_text_without_facts_is_rejected(self):
+        r = plain_run({"query": "Yamaha C40"}, "O Yamaha C40 Nylon Natural custa R$ 599,90.")
+        self.assertNotIn("O Yamaha C40 Nylon Natural custa R$ 599,90.", r["text"])
+        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+    def test_neutral_text_with_yamaha_facts_renders_line(self):
+        args = {"query": "Yamaha C40", "payment_method": "pix"}
+        r, _ = run([final(["catalog-1"], "Encontrei este modelo:")], args)
+        self.assertIn("Encontrei este modelo:", r["text"])
+        self.assertIn("Yamaha C40 Nylon Natural: disponível em estoque; R$ 569,91", r["text"])
+    def test_policy_only_price_claim_is_delivered(self):
+        policy = tool_call("lookup_public_policy", {"query": "PIX", "topic": "payments"})
+        r = plain_turn([{"tool_calls": [policy]}],
+                       "No PIX há 5% de desconto sobre o preço de tabela.")
+        self.assertEqual(r["outcome"], "answer")
+        self.assertIn("No PIX há 5% de desconto sobre o preço de tabela.", r["text"])

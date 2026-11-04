@@ -18,13 +18,19 @@ from emporio.chat.worker import process_next
 FIXTURES = Path(__file__).resolve().parents[1] / "docs/fixtures/meta-v24"
 
 
+FACTS = ["catalog-1"]
+DELIVERED = ("Para devolução, confirme as condições aplicáveis com a loja.\n"
+             "Takamine GD20 Dreadnought Natural: disponível em estoque; R$ 2.199,00 "
+             "(preço registrado; forma de pagamento não informada).")
+
+
 def _gemma_callback_answers(final):
     lookup_calls = [
         {"id": "catalog", "type": "function", "function": {"name": "search_catalog", "arguments": '{"query":"Takamine GD20","mode":"resolve"}'}},
         {"id": "policy", "type": "function", "function": {"name": "lookup_public_policy", "arguments": '{"query":"devolução","topic":"returns"}'}},
     ]
-    control = {"id": "reply", "type": "function", "function": {"name": "respond_to_customer", "arguments": json.dumps({"outcome": "answer", "text": final, "reason": None}, ensure_ascii=False)}}
-    terminal = {"outcome": "answer", "text": final, "reason": None}
+    control = {"id": "reply", "type": "function", "function": {"name": "respond_to_customer", "arguments": json.dumps({"outcome": "answer", "text": final, "reason": None, "facts": FACTS}, ensure_ascii=False)}}
+    terminal = {"outcome": "answer", "text": final, "reason": None, "facts": FACTS}
     return [_gemma_answer({"tool_calls": lookup_calls}, "tool_calls"), _gemma_answer({"tool_calls": [control]}, "tool_calls"), _gemma_answer({"content": json.dumps(terminal, ensure_ascii=False)}, "stop")]
 
 
@@ -106,8 +112,8 @@ class CustomerTurnIntegrationTests(TestCase):
             {"id": "catalog", "type": "function", "function": {"name": "search_catalog", "arguments": '{"query":"Takamine GD20","mode":"resolve"}'}},
             {"id": "policy", "type": "function", "function": {"name": "lookup_public_policy", "arguments": '{"query":"devolução","topic":"returns"}'}},
         ]
-        final = "O Takamine GD20 está disponível. Para devolução, confirme as condições aplicáveis com a loja."
-        model = Mock(side_effect=[{"tool_calls": calls}, {"content": json.dumps({"outcome": "answer", "text": final, "reason": None})}])
+        final = "Para devolução, confirme as condições aplicáveis com a loja."
+        model = Mock(side_effect=[{"tool_calls": calls}, {"content": json.dumps({"outcome": "answer", "text": final, "reason": None, "facts": FACTS})}])
         seen_counts = []
 
         def counted_model(messages, tools):
@@ -134,7 +140,7 @@ class CustomerTurnIntegrationTests(TestCase):
     def test_real_catalog_policy_worker_and_meta_client_complete_one_signed_fixture_turn(self):
         job, happened = self.signed_job()
         final, seen_counts, model, counted_model = self.model(job)
-        sender, meta_http = self.meta_sender(final)
+        sender, meta_http = self.meta_sender(DELIVERED)
         with patch("django.utils.timezone.now", return_value=happened + timedelta(seconds=1)):
             reply = process_next(model_client=counted_model, send_client=sender)
         meta_http.close()
@@ -145,7 +151,7 @@ class CustomerTurnIntegrationTests(TestCase):
 
     def test_gemma_reply_control_finishes_after_catalog_and_policy_results(self):
         job, happened = self.signed_job()
-        final = "O Takamine GD20 está disponível. Para devolução, confirme as condições aplicáveis com a loja."
+        final = "Para devolução, confirme as condições aplicáveis com a loja."
         cloud_requests = []
         answers = iter(_gemma_callback_answers(final))
 
@@ -155,13 +161,13 @@ class CustomerTurnIntegrationTests(TestCase):
 
         cloud_http = httpx.Client(transport=httpx.MockTransport(respond))
         model = CloudflareClient(account_id="acct", api_key="cf-key", model="@cf/google/gemma-4-26b-a4b-it", client=cloud_http)
-        sender, meta_http = self.meta_sender(final)
+        sender, meta_http = self.meta_sender(DELIVERED)
         with patch("django.utils.timezone.now", return_value=happened + timedelta(seconds=1)):
             reply = process_next(model_client=model, send_client=sender)
         cloud_http.close()
         meta_http.close()
         job.refresh_from_db()
-        self.assertEqual((reply.state, reply.provider_id, reply.text), ("accepted", "wamid.synthetic.outgoing.1", final))
+        self.assertEqual((reply.state, reply.provider_id, reply.text), ("accepted", "wamid.synthetic.outgoing.1", DELIVERED))
         self.assertEqual((len(cloud_requests), job.model_requests, job.tool_executions), (2, 2, 2))
         replay = cloud_requests[1]["messages"]
         tool_results = [message for message in replay if message["role"] == "tool"]

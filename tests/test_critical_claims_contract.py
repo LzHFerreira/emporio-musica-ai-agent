@@ -1,3 +1,5 @@
+import json
+
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -11,7 +13,10 @@ RETURN_DRAFT = ("Sim, você pode solicitar a devolução online em até 7 dias c
                 "recebimento, mesmo já tendo usado o violão.")
 STOCK_DRAFT = ("Sim, o Giannini GF-3D Dreadnought Sunburst está disponível em estoque, "
                "por R$ 799,90.")
-CONTROL_DRAFT = "O Giannini GF-3D Dreadnought Sunburst está sem estoque no momento."
+
+
+def with_facts(text, facts=("catalog-1",)):
+    return json.dumps({"outcome": "answer", "text": text, "reason": None, "facts": list(facts)})
 
 
 def scripted(calls, draft):
@@ -42,9 +47,9 @@ class CriticalClaimsContractTests(TestCase):
                  tool_call("lookup_public_policy", {"query": "PIX desconto promoção",
                                                     "topic": "promotions"}, "call-2")]
         result = self._run("Quanto fica o Kalani KAL-700T no PIX?", calls, draft)
+        # Catalog turns with prices in prose are rejected by the M4 facts rule before pix_stacking runs.
         self.assertNotIn("sempre ganha mais 5%", result["text"])
-        self.assertIn({"tool": "output_check", "outcome": "rejected", "check": "pix_stacking"},
-                      result["operations"])
+        self.assertTrue(any(op.get("outcome") == "rejected" for op in result["operations"]))
 
     def test_used_item_online_return_is_not_delivered(self):
         calls = [tool_call("lookup_public_policy", {"query": "devolução online",
@@ -60,8 +65,10 @@ class CriticalClaimsContractTests(TestCase):
 
     def test_out_of_stock_control_is_delivered(self):
         calls = [tool_call("search_catalog", {"query": "Giannini GF-3D"})]
-        result = self._run("O Giannini GF-3D está disponível em estoque?", calls, CONTROL_DRAFT)
-        self.assertEqual((result["outcome"], result["text"]), ("answer", CONTROL_DRAFT))
+        result = self._run("O Giannini GF-3D está disponível em estoque?", calls, with_facts("Encontrei este modelo:"))
+        self.assertEqual(result["outcome"], "answer")
+        self.assertIn("Giannini GF-3D Dreadnought Sunburst: sem estoque no momento; "
+                      "R$ 799,90 (preço registrado; forma de pagamento não informada).", result["text"])
 
     def test_in_stock_product_is_not_called_out_of_stock(self):
         calls = [tool_call("search_catalog", {"query": "Yamaha C40"})]
@@ -71,20 +78,23 @@ class CriticalClaimsContractTests(TestCase):
 
     def test_in_stock_control_is_delivered(self):
         calls = [tool_call("search_catalog", {"query": "Yamaha C40"})]
-        draft = "O Yamaha C40 Nylon Natural está disponível em estoque."
-        result = self._run("O Yamaha C40 está disponível em estoque?", calls, draft)
-        self.assertEqual((result["outcome"], result["text"]), ("answer", draft))
+        result = self._run("O Yamaha C40 está disponível em estoque?", calls, with_facts("Encontrei este modelo:"))
+        self.assertEqual(result["outcome"], "answer")
+        self.assertIn("Yamaha C40 Nylon Natural: disponível em estoque; R$ 599,90", result["text"])
 
     def test_pix_controls_are_delivered(self):
         calls = [tool_call("search_catalog", {"query": "Kalani KAL-700T", "payment_method": "pix"}),
                  tool_call("lookup_public_policy", {"query": "PIX desconto promoção",
                                                     "topic": "promotions"}, "call-2")]
-        draft = ("O Kalani KAL-700T está por R$ 323,10 na promoção; o desconto de PIX não se "
-                 "aplica sobre preços promocionais.")
-        result = self._run("Quanto fica o Kalani KAL-700T no PIX?", calls, draft)
-        self.assertEqual((result["outcome"], result["text"]), ("answer", draft))
+        text = ("Sobre o Kalani KAL-700T no PIX, o desconto de PIX não se "
+                "aplica sobre preços promocionais.")
+        result = self._run("Quanto fica o Kalani KAL-700T no PIX?", calls, with_facts(text))
+        self.assertEqual(result["outcome"], "answer")
+        self.assertIn(text, result["text"])
+        self.assertIn("Kalani KAL-700T Tenor Natural: disponível em estoque; R$ 323,10 "
+                      "(promoção do catálogo; pagamento integral via PIX; não cumulativa com PIX).", result["text"])
         calls = [tool_call("search_catalog", {"query": "Yamaha C40", "payment_method": "pix"}),
                  tool_call("lookup_public_policy", {"query": "PIX", "topic": "payments"}, "call-2")]
-        draft = "O Yamaha C40 Nylon Natural está por R$ 569,91 no PIX, com 5% de desconto no PIX."
-        result = self._run("Quanto fica o Yamaha C40 no PIX?", calls, draft)
-        self.assertEqual((result["outcome"], result["text"]), ("answer", draft))
+        result = self._run("Quanto fica o Yamaha C40 no PIX?", calls, with_facts("Segue o modelo, com 5% de desconto no PIX."))
+        self.assertEqual(result["outcome"], "answer")
+        self.assertIn("Yamaha C40 Nylon Natural: disponível em estoque; R$ 569,91", result["text"])

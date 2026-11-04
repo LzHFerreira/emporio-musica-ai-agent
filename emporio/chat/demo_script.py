@@ -99,13 +99,14 @@ def _terminal(case, results):
     kind = case["answer"]
     if kind == "handoff":
         return _handoff()
-    answer = {
-        "catalog": lambda: _catalog_answer(results[0]),
-        "policy": lambda: _policy_text(results),
-        "both": lambda: _catalog_answer(results[0]) + " " + _policy_text(results[1:]),
-        "pix": lambda: _pix_answer(results[0]) + " " + _policy_text(results[1:]),
-    }[kind]()
-    return _answer(answer)
+    if kind == "policy":
+        return _answer(_policy_text(results))
+    facts = [_first_item(results[0])["ref"]]
+    if kind == "catalog":
+        return _answer("Encontrei este modelo:", facts)
+    if kind == "pix":
+        return _answer("Encontrei esta opção para pagamento por PIX:", facts)
+    return _answer("Encontrei este modelo. " + _policy_text(results[1:]), facts)
 
 
 def _handoff():
@@ -113,23 +114,11 @@ def _handoff():
     return {"content": json.dumps(content, ensure_ascii=False)}
 
 
-def _answer(text):
-    return {
-        "content": json.dumps(
-            {"outcome": "answer", "text": text, "reason": None}, ensure_ascii=False
-        )
-    }
-
-
-def _catalog_answer(result):
-    item = _first_item(result)
-    return f"{item['name']} está disponível por R$ {item['base_price_brl'].replace('.', ',')}."
-
-
-def _pix_answer(result):
-    item = _first_item(result)
-    amount = item["payable_price_brl"].replace(".", ",")
-    return f"Para pagamento integral por PIX, {item['name']} fica em R$ {amount}."
+def _answer(text, facts=None):
+    content = {"outcome": "answer", "text": text, "reason": None}
+    if facts:
+        content["facts"] = facts
+    return {"content": json.dumps(content, ensure_ascii=False)}
 
 
 def _first_item(result):

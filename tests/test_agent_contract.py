@@ -76,7 +76,7 @@ class AgentTurnContractTests(TestCase):
 
     def test_live_model_formats_and_searched_budget_are_accepted(self):
         search = tool_call("search_catalog", {"query": "violão de nylon", "max_price_brl": 1000, "payment_method": "pix", "available_only": True})
-        texts = ('Segue: {"outcome":"answer","text":"Opções até R$ 1.000,00 no PIX. Tagima Memphis AC-39 Nylon Natural: R$ 408,41.","reason":null}', '{"outcome":"answer","text":"Opções até R$ 1.000,00 no PIX. Tagima Memphis AC-39 Nylon Natural: R$ 408,41."}')
+        texts = ('Segue: {"outcome":"answer","text":"Opções no PIX:","reason":null,"facts":["catalog-1"]}', '{"outcome":"answer","text":"Opções no PIX:","facts":["catalog-1"]}')
         for text in texts:
             with self.subTest(text=text):
                 replies = iter([{"tool_calls": [search]}, {"content": text}])
@@ -112,10 +112,8 @@ class AgentTurnContractTests(TestCase):
             with self.subTest(text=text):
                 replies = iter([{"tool_calls": [search]}] + [{"content": json.dumps({"outcome": "answer", "text": text, "reason": None})}] * 3)
                 result = run_turn("Violão de nylon até mil no pix?", sender="5567998123456", model_client=lambda m, t: next(replies))
-                if text == good:
-                    self.assertTrue(result["text"].startswith(good))
-                else:
-                    self.assertNotEqual(result["text"], swapped)
+                # Prose prices after a catalog search are rejected under M4; prices must come via facts.
+                self.assertNotIn("R$ 408,41", result["text"])
 
     def test_out_of_scope_reply_uses_fixed_portuguese_text(self):
         from emporio.agent_protocol import OUT_OF_SCOPE_TEXT

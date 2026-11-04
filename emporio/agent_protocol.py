@@ -54,7 +54,8 @@ SYSTEM_PROMPT = "\n".join(
         '"verification_failed"|"unsupported"|"other"}. Use reason=null para answer e '
         "clarification; handoff exige um dos quatro motivos válidos. "
         "Não inclua texto fora do JSON.",
-        'Use "facts": ["catalog-N"] para a app citar nome e estoque; nunca escreva refs no texto.',
+        "Depois de search_catalog, cite nomes, preços, estoque e condições de pagamento somente "
+        'com refs em "facts": ["catalog-N"], nunca no texto; não escreva refs no texto.',
         "Use clarification para perguntar por preferências ou dados necessários, sem afirmar "
         "fatos da loja; por exemplo, pergunte o orçamento ou se a pessoa prefere violão "
         "de 6 ou 12 cordas.",
