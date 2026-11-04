@@ -10,6 +10,7 @@ HOURS = tool_call("lookup_public_policy", {"query": "horário", "topic": "hours"
 RETURNS = tool_call("lookup_public_policy", {"query": "devolução online", "topic": "returns"})
 SWAPPED_DRAFT = ("O Yamaha C40 Nylon Natural está por R$ 699,90 e o Yamaha F310 Aço Natural "
                  "por R$ 599,90.")
+REVERSED_DRAFT = "Segunda a sexta das 18:00 às 09:00 e sábado das 09:00 às 13:00."
 DAY_UNITS_DRAFT = ("Você pode devolver online em até 7 dias úteis após o recebimento, desde que "
                    "o produto esteja na embalagem original.")
 HOURS_DRAFT = "Segunda a sexta das 09:00 às 18:00 e sábado das 09:00 às 13:00."
@@ -25,6 +26,10 @@ class ClaimBindingContractTests(TestCase):
     def test_swapped_product_prices_are_not_delivered(self):
         result = self._run("Quanto custam o Yamaha C40 e o Yamaha F310?", [CATALOG], SWAPPED_DRAFT)
         self.assertNotEqual(result["text"], SWAPPED_DRAFT)
+
+    def test_reversed_store_hours_are_not_delivered(self):
+        result = self._run("Qual o horário de funcionamento?", [HOURS], REVERSED_DRAFT)
+        self.assertNotEqual(result["text"], REVERSED_DRAFT)
 
     def test_changed_return_day_units_are_not_delivered(self):
         result = self._run("Posso devolver uma compra feita pelo site?", [RETURNS], DAY_UNITS_DRAFT)

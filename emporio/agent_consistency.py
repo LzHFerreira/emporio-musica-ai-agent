@@ -18,6 +18,7 @@ GROUNDED_PHRASES = (
 )
 CLOSED_DAY = re.compile(r"domingo|feriado")
 OPENING = re.compile(r"\b(?:abr\w*|aberto|aberta|funcion\w*)\b")
+HOURS_RANGE = re.compile(r"\b(?:das?|de) (\d{1,2}(?::\d{2})?) (?:as|a) (\d{1,2}(?::\d{2})?)\b")
 PIX_STACKING = re.compile(
     r"\b(?:mais|adicional|alem|acumul|cumulativ|soma|sobre (?:esse|este|o) (?:valor|preco))"
 )
@@ -31,6 +32,7 @@ def consistency_checks(text: str, evidence: list[Any]) -> list[tuple[str, Callab
     return [
         ("units", lambda: set(UNIT.findall(plain)) <= set(UNIT.findall(found))),
         ("closed_days", lambda: _closed_days_respected(plain, found)),
+        ("hours_order", lambda: _hours_ordered(plain)),
         ("phrases", lambda: _grounded_phrases_present(plain, found)),
         ("entitlement", lambda: _entitlement_conditioned(plain)),
         ("availability", lambda: availability_bound(text, evidence)),
@@ -69,6 +71,15 @@ def _closed_days_respected(plain: str, found: str) -> bool:
         CLOSED_DAY.search(s) and OPENING.search(s) and not re.search(r"nao|fechad", s)
         for s in re.split(r"[.!?;\n]", plain)
     )
+
+
+def _hours_ordered(plain: str) -> bool:
+    return all(_minutes(a) < _minutes(b) for a, b in HOURS_RANGE.findall(plain))
+
+
+def _minutes(clock: str) -> int:
+    hour, _, minute = clock.partition(":")
+    return int(hour) * 60 + int(minute or 0)
 
 
 def _entitlement_conditioned(plain: str) -> bool:
