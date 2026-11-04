@@ -14,6 +14,8 @@ A single direct `run_turn`/`OpenRouterClient` request sent a synthetic Portugues
 
 Windows Ollama 0.40.14 with `qwen3:4b` was reachable from NAT-mode WSL through gateway `172.24.160.1` at review time. A synthetic greeting returned terminal JSON in 28.42 s. A full policy turn did not reach mock send acceptance before the 55-second work cutoff (55.73 s). These outcomes establish adapter reachability and one response shape, not tool-loop or task qualification. Setup and model digest are recorded in [ADR-0004](adr/0004-free-model-and-provider-fallbacks.md).
 
+On 2026-11-04, `qwen3.5:9b` (Q4_K_M) on a Ryzen 5 8600G with integrated graphics took 10–70 s per request. With `OLLAMA_TIMEOUT_SECONDS=180` and `TURN_DEADLINE_SECONDS=900`, it completed the [five recorded conversations](interactions.md): 9 of 10 turns gave grounded answers and one gave the fixed failure reply. This is development evidence on one host, not an independent quality evaluation.
+
 ## Cloudflare Gemma application path (2026-11-03)
 
 A bounded app probe sent two POST requests to the configured Gemma route; both returned HTTP 200. Gemma requested the Takamine GD20 catalog result and a public-policy lookup, then invoked the private `respond_to_customer` function. The worker nevertheless persisted its fixed failure reply, which the local Meta mock accepted; elapsed time was 20.515 s. The retained diagnostic excludes the reply arguments and raw response, so it cannot establish whether terminal parsing or evidence validation ran. This is evidence of model/tool protocol activity, not a successful customer answer or a completed workflow qualification.
