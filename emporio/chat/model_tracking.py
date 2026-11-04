@@ -31,7 +31,7 @@ class TrackedModelClient:
         previous = getattr(timed_client, "request_timeout", None)
         bounded = isinstance(previous, (int, float))
         if bounded:
-            timed_client.request_timeout = min(60.0, remaining)
+            timed_client.request_timeout = min(previous, remaining)
         try:
             result = self.client(messages, tools)
         finally:

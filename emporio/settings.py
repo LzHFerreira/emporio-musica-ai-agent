@@ -73,6 +73,10 @@ CLOUDFLARE_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
 CLOUDFLARE_MODEL = os.environ.get("CLOUDFLARE_MODEL", "@cf/zai-org/glm-4.7-flash")
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:4b")
+# Local models on consumer CPUs/iGPUs read long prompts slowly; 60s cut off valid replies.
+OLLAMA_TIMEOUT_SECONDS = float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "180"))
+# 60s matches the WhatsApp reply target; raise only for slow local models.
+TURN_DEADLINE_SECONDS = float(os.environ.get("TURN_DEADLINE_SECONDS", "60"))
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-6-luna")
 OPENAI_API_MODE = os.environ.get("OPENAI_API_MODE", "responses").strip().lower()

@@ -122,3 +122,11 @@ class InteractChatReviewTests(TransactionTestCase):
         self.assertEqual((len(requests), requests[0].url.path), (1, "/v1/chat/completions"))
         self.assertNotIn("authorization", requests[0].headers)
         self.assertTrue(client.is_closed)
+
+    @override_settings(OPENROUTER_API_KEY="test-key")
+    def test_sender_option_is_persisted_on_the_incoming_message(self):
+        answer = {"content": json.dumps({"outcome": "answer", "text": "Olá!", "reason": None})}
+        client = httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(200, json={"choices": [{"message": answer}]})))
+        with patch("emporio.chat.openrouter._http_client", return_value=client):
+            call_command("interact_chat", message="Qual o horário?", sender="5567998123456", stdout=StringIO())
+        self.assertEqual(IncomingMessage.objects.get(text="Qual o horário?").sender, "5567998123456")

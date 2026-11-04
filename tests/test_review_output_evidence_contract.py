@@ -148,3 +148,9 @@ def test_unsupported_output_claims_are_rejected(text, outcome, sources, evidence
 def test_warranty_days_supported_by_warranty_evidence_are_allowed():
     evidence = [{"outcome": "found", "data": [{"text": "Garantia legal de 90 dias para produtos duráveis."}]}]
     assert output_supported("A garantia é de 90 dias.", "answer", POLICY, evidence)
+
+
+def test_store_address_answer_starting_with_rua_is_supported():
+    evidence = [{"outcome": "found", "data": [{"text": "Endereço Rua 14 de Maio, 3200 — Centro, Campo Grande - MS, 79202-333 Telefone / WhatsApp (67) 3341-4444"}]}]
+    text = "O endereço da nossa loja é: Rua 14 de Maio, 3200 — Centro, Campo Grande - MS, 79202-333."
+    assert output_supported(text, "answer", POLICY, evidence)

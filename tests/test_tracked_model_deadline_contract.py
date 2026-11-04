@@ -95,3 +95,18 @@ class TrackedModelDeadlineTests(TestCase):
             self.assertEqual(tracked([], []), {"content": "ok"})
             self.assertAlmostEqual(seen[0], 3, delta=0.05)
         self.assertEqual(client.request_timeout, 60)
+
+    def test_request_timeout_keeps_client_timeout_when_work_has_time(self):
+        job = self.make_job(timezone.now() + timedelta(seconds=600))
+        seen = []
+        class Client:
+            model, returned_model, returned_provider = "qwen3:4b", "qwen3:4b", "ollama"
+            request_timeout = 180.0
+            def __call__(self, messages, tools):
+                seen.append(self.request_timeout)
+                return {"content": "ok"}
+        client = Client()
+        tracked = TrackedModelClient(job, client)
+        self.assertEqual(tracked([], []), {"content": "ok"})
+        self.assertEqual(seen, [180.0])
+        self.assertEqual(client.request_timeout, 180.0)

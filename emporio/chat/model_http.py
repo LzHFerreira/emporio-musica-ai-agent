@@ -16,7 +16,7 @@ def post_with_timeout(
     timeout: float,
 ) -> httpx.Response:
     """Wait only for the remaining budget; late HTTP results cannot run tools."""
-    timeout = min(float(timeout), 60.0)
+    timeout = min(float(timeout), 300.0)
     if not timeout > 0:
         raise httpx.TimeoutException("Model request deadline exhausted")
     deadline = monotonic() + timeout

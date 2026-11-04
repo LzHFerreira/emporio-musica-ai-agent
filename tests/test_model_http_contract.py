@@ -38,9 +38,11 @@ class ModelHttpContractTests(SimpleTestCase):
             def post(self, *args, **kwargs):
                 seen.append(kwargs)
                 return httpx.Response(200)
-        response = post_with_timeout(Client(), "http://model.test", headers={}, payload={}, timeout=61)
+        response = post_with_timeout(Client(), "http://model.test", headers={}, payload={}, timeout=301)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual((seen[0]["timeout"], seen[0]["follow_redirects"]), (60, False))
+        self.assertEqual((seen[0]["timeout"], seen[0]["follow_redirects"]), (300, False))
+        post_with_timeout(Client(), "http://model.test", headers={}, payload={}, timeout=180)
+        self.assertEqual(seen[1]["timeout"], 180)
 
     def test_nonpositive_deadline_never_starts_transport(self):
         client = SlowClient()

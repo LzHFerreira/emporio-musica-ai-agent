@@ -146,3 +146,9 @@ class WebhookMessageContractTests(WebhookTestSupport, TestCase):
         self.assertEqual((message.state, message.text), ("unsupported", "Posso ajudar apenas com mensagens de texto nesta conversa."))
         self.assertNotIn("maria@example.com", message.text)
         self.assertNotIn("media-secret", message.text)
+
+    @override_settings(TURN_DEADLINE_SECONDS=300)
+    def test_turn_deadline_setting_sets_incoming_message_deadline(self):
+        self.assertEqual(self.post_fixture("incoming-text.json").status_code, 200)
+        message = IncomingMessage.objects.get()
+        self.assertAlmostEqual((message.deadline - message.received_at).total_seconds(), 300, delta=5)

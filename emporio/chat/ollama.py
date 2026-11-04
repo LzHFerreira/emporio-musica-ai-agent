@@ -34,7 +34,7 @@ class OllamaClient:
         validate_ollama_configuration(endpoint, self.model)
         self.base_url = endpoint.rstrip("/")
         self.client = _unauthenticated_client(client)
-        self.request_timeout = 60.0
+        self.request_timeout = settings.OLLAMA_TIMEOUT_SECONDS
         self.returned_model = ""
         self.returned_provider = ""
 

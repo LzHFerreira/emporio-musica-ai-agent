@@ -1,5 +1,7 @@
 import json
+import os
 import httpx
+from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 from emporio.chat.ollama import OllamaClient
 
@@ -22,7 +24,7 @@ class OllamaClientContractTests(SimpleTestCase):
         self.assertTrue(all("authorization" not in request.headers for request in seen))
         self.assertEqual((bodies[0]["max_tokens"], bodies[0]["tools"]), (1024, tools))
         self.assertEqual(bodies[1]["messages"], followup)
-        self.assertEqual(seen[0].extensions["timeout"]["read"], 60)
+        self.assertEqual(seen[0].extensions["timeout"]["read"], 180)
         self.assertEqual((first["tool_calls"][0]["id"], first["tool_calls"][0]["function"]["arguments"], result["content"]), ("policy-1", json.dumps({"q": "x"}), json.dumps({"ok": True})))
         self.assertEqual((model.returned_model, model.returned_provider), ("qwen3:4b", "ollama"))
         client.close()
@@ -80,3 +82,13 @@ class OllamaClientContractTests(SimpleTestCase):
                 with self.assertRaises(ValueError):
                     OllamaClient(model="qwen3:4b", client=client)([], [])
                 client.close()
+
+    @override_settings(OLLAMA_TIMEOUT_SECONDS=240.0)
+    def test_timeout_setting_overrides_client_timeout(self):
+        self.assertEqual(OllamaClient(base_url="http://localhost:11434/v1", model="qwen3:4b").request_timeout, 240.0)
+
+    def test_default_timeout_is_180_seconds(self):
+        if "OLLAMA_TIMEOUT_SECONDS" in os.environ:
+            self.skipTest("OLLAMA_TIMEOUT_SECONDS is set in the environment")
+        self.assertEqual(settings.OLLAMA_TIMEOUT_SECONDS, 180.0)
+        self.assertEqual(OllamaClient(base_url="http://localhost:11434/v1", model="qwen3:4b").request_timeout, 180.0)

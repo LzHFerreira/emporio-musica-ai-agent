@@ -36,7 +36,7 @@ def _address_words(text: str) -> list[str]:
 
 
 def _address_marker(words):
-    for term in ("endereco", "rua", "avenida", "logradouro", "cep"):
+    for term in ("rua", "avenida", "logradouro", "cep", "endereco"):
         if term in words:
             return term
     return None

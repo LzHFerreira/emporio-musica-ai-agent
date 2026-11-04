@@ -29,10 +29,14 @@ class AgentSchemaContractTests(SimpleTestCase):
         self.assertTrue(arguments_valid("get_own_order_status", {"order_id": 4}))
 
     def test_terminal_rejects_extra_keys_unbounded_text_and_bad_handoff_reason(self):
-        invalid = ("not json", "[]", '{"outcome":"answer","text":"x","reason":null,"extra":1}', '{"outcome":"answer","text":"","reason":null}', '{"outcome":"handoff","text":"x","reason":null}', '{"outcome":"answer","text":"x","reason":"customer_request"}', json.dumps({"outcome": "answer", "text": "x" * 2001, "reason": None}))
+        invalid = ('{"outcome":"answer","text":"x"', '{"outcome": [}', '{"outcome":"answer","text":"x","reason":null,"extra":1}', '{"outcome":"answer","text":"","reason":null}', '{"outcome":"handoff","text":"x","reason":null}', '{"outcome":"answer","text":"x","reason":"customer_request"}', json.dumps({"outcome": "answer", "text": "x" * 2001, "reason": None}))
         for value in invalid:
             with self.subTest(value=value):
                 self.assertIsNone(terminal(value))
+
+    def test_plain_text_becomes_answer_and_blank_text_is_rejected(self):
+        self.assertEqual(terminal("No sábado abrimos das 09:00 às 13:00."), {"outcome": "answer", "text": "No sábado abrimos das 09:00 às 13:00.", "reason": None})
+        self.assertIsNone(terminal("   "))
 
     def test_result_envelope_keeps_pinned_version_and_counters(self):
         value = result("answer", "Oi", None, [], [], 1, 0, "snapshot-a")

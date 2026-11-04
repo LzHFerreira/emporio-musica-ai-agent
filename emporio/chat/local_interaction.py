@@ -14,7 +14,7 @@ from emporio.chat.models import IncomingMessage, OutgoingReply
 from emporio.chat.worker import process_next
 
 
-def run_interaction(messages, model_client, stdout):
+def run_interaction(messages, model_client, stdout, sender=None):
     """Submit each evaluator message and print its worker-validated reply."""
     if SourceSnapshot.objects.filter(is_active=True).first() is None:
         raise CommandError("Load canonical sources before starting interact_chat")
@@ -23,7 +23,7 @@ def run_interaction(messages, model_client, stdout):
     if first is None:
         return
     _require_idle_worker()
-    sender = _synthetic_sender()
+    sender = sender or _synthetic_sender()
     with MetaAcceptanceServer() as provider, webhook_server() as webhook:
         sender_client = MetaClient(base_url=provider.base_url, token="local-demo-only")
         try:
