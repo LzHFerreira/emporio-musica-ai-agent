@@ -14,6 +14,12 @@ from emporio.model_evaluation import verdict
 FIXTURE = Path(__file__).parent / "fixtures" / "model_quality.json"
 CASES = json.loads(FIXTURE.read_text(encoding="utf-8"))
 COMMAND = "emporio.chat.management.commands.evaluate_model"
+TAKAMINE_RETURN = "O Takamine GD20 tá disponível e posso devolver se me arrepender?"
+SATURDAY_HOURS = "Qual o horário de vocês no sábado?"
+
+
+def _case(question):
+    return next(case for case in CASES if case["question"] == question)
 
 
 class ModelVerdictTests(SimpleTestCase):
@@ -30,6 +36,21 @@ class ModelVerdictTests(SimpleTestCase):
 
     def test_missing_any_group_hit_fails_the_check(self):
         self.assertEqual(verdict(CASES[3], "Abrimos às 09:00 no sábado."), "FAIL-CHECK")
+
+    def test_negated_must_terms_fail_the_check(self):
+        reply = "O Takamine custa R$ 2199,00. Você NÃO pode devolver em 7 dias."
+        self.assertEqual(verdict(_case(TAKAMINE_RETURN), reply), "FAIL-CHECK")
+
+    def test_negated_hours_fail_the_check(self):
+        self.assertEqual(verdict(_case(SATURDAY_HOURS), "Não abrimos entre 9h e 13h."), "FAIL-CHECK")
+
+    def test_positive_answers_still_pass(self):
+        reply = "O Takamine GD20 custa R$ 2199,00 e você pode devolver em até 7 dias."
+        self.assertEqual(verdict(_case(TAKAMINE_RETURN), reply), "PASS")
+
+    def test_negation_in_another_clause_does_not_fail_the_check(self):
+        reply = "No sábado abrimos das 9h às 13h; não abrimos aos domingos."
+        self.assertEqual(verdict(_case(SATURDAY_HOURS), reply), "PASS")
 
 
 class ModelEvaluatorCommandTests(SimpleTestCase):

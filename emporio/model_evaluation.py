@@ -1,7 +1,9 @@
 """Measure live-model replies against the fixed development quality cases."""
 
 import json
+import re
 from collections import Counter
+from itertools import chain
 from pathlib import Path
 from typing import Any
 
@@ -10,13 +12,17 @@ from emporio.agent_protocol import FAILURE_TEXT, HANDOFF_TEXT
 
 SENDER = "5567999990000"
 FAIL_SAFE_TEXTS = {FAILURE_TEXT, HANDOFF_TEXT}
+NEGATION = re.compile(r"\b(?:não|nao|nunca|nenhum|nenhuma)\b", re.IGNORECASE)
+CLAUSE_BREAK = re.compile(r"[.;!?\n]+")
+DIGIT = re.compile(r"\d")
 
 
 def verdict(case: dict[str, Any], text: str) -> str:
-    """Classify one reply as a fail-safe notice, a pass, or a failed source check."""
+    """Classify a reply; negated digit facts fail, text-only terms are exempt (out-of-scope)."""
     if text in FAIL_SAFE_TEXTS:
         return "FAIL-SAFE"
-    return "PASS" if _checks_pass(case, _normalize(text)) else "FAIL-CHECK"
+    passed = _checks_pass(case, _normalize(text)) and not _negated_fact(case, text)
+    return "PASS" if passed else "FAIL-CHECK"
 
 
 def evaluate_model(path: Path, runs: int, model_client: Any) -> dict[str, Any]:
@@ -49,6 +55,16 @@ def _checks_pass(case: dict[str, Any], normalized: str) -> bool:
         and _groups_hit(case["any_groups"], normalized)
         and not _any_hit(case["forbid"], normalized)
     )
+
+
+def _negated_fact(case: dict[str, Any], text: str) -> bool:
+    terms = [*case["must"], *chain.from_iterable(case["any_groups"])]
+    return any(_only_negated(term, text) for term in terms if DIGIT.search(term))
+
+
+def _only_negated(item: str, text: str) -> bool:
+    clauses = [clause for clause in CLAUSE_BREAK.split(text) if _hits(item, _normalize(clause))]
+    return bool(clauses) and all(NEGATION.search(c) for c in clauses)
 
 
 def _all_hit(items: list[str], normalized: str) -> bool:
