@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from emporio.model_evaluation import FAIL_SAFE_TEXTS, _critical_hit, _passes, verdict
+from emporio.evaluation_claims import critical_hit
+from emporio.model_evaluation import FAIL_SAFE_TEXTS, _passes, verdict
 
 
 def assess(case: dict[str, Any], text: str) -> dict[str, str]:
@@ -14,7 +15,7 @@ def assess(case: dict[str, Any], text: str) -> dict[str, str]:
     """
     return {
         "outcome": verdict(case, text),
-        "factual": "fail" if _critical_hit(case, text) else "pass",
+        "factual": "fail" if critical_hit(case, text) else "pass",
         "lexical": "pass" if _passes(case, text) else "fail",
         "execution": "fail" if text in FAIL_SAFE_TEXTS else "pass",
     }

@@ -4,7 +4,6 @@ import json
 import re
 import statistics
 import time
-import unicodedata
 from collections import Counter
 from itertools import chain
 from pathlib import Path
@@ -12,6 +11,7 @@ from typing import Any
 
 from emporio.agent import run_turn
 from emporio.agent_protocol import FAILURE_TEXT, HANDOFF_TEXT
+from emporio.evaluation_claims import critical_hit
 
 SENDER = "5567999990000"
 FAIL_SAFE_TEXTS = {FAILURE_TEXT, HANDOFF_TEXT}
@@ -29,19 +29,9 @@ def verdict(case: dict[str, Any], text: str) -> str:
     """
     if text in FAIL_SAFE_TEXTS:
         return "FAIL-SAFE"
-    if _critical_hit(case, text):
+    if critical_hit(case, text):
         return "INCORRECT"
     return "PASS" if _passes(case, text) else "FAIL-CHECK"
-
-
-def _critical_hit(case: dict[str, Any], text: str) -> bool:
-    folded = _fold(text)
-    return any(re.search(item["claim"], folded) for item in case.get("critical", []))
-
-
-def _fold(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", text)
-    return "".join(char for char in decomposed if not unicodedata.combining(char)).lower()
 
 
 def _passes(case: dict[str, Any], text: str) -> bool:
