@@ -19,9 +19,15 @@ def with_facts(text, facts=("catalog-1",)):
     return json.dumps({"outcome": "answer", "text": text, "reason": None, "facts": list(facts)})
 
 
+def terminal_json(draft):
+    if draft.lstrip().startswith("{"):
+        return draft
+    return json.dumps({"outcome": "answer", "text": draft, "reason": None})
+
+
 def scripted(calls, draft):
     replies = iter([{"tool_calls": calls}])
-    return lambda messages, tools: next(replies, {"content": json.dumps({"outcome": "answer", "text": draft, "reason": None})})
+    return lambda messages, tools: next(replies, {"content": terminal_json(draft)})
 
 
 class CriticalClaimsContractTests(TestCase):
