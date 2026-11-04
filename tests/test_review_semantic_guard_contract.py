@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -23,7 +24,8 @@ class SemanticGuardContractTests(TestCase):
         call_command("load_sources", source_dir=str(DATA_DIR), verbosity=0)
 
     def _turn(self, reply):
-        model = Mock(side_effect=[{"tool_calls": [tool_call("read_store_manual", {})]}, {"content": reply}, {"content": reply}])
+        answer = {"content": json.dumps({"outcome": "answer", "text": reply, "reason": None})}
+        model = Mock(side_effect=[{"tool_calls": [tool_call("read_store_manual", {})]}, answer, answer])
         return run_turn("Pergunta sobre a política", sender="5567998123456", model_client=model)
 
     def test_wrong_policy_replies_are_rejected(self):

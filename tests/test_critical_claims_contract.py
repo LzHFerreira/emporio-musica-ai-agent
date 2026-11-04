@@ -21,7 +21,7 @@ def with_facts(text, facts=("catalog-1",)):
 
 def scripted(calls, draft):
     replies = iter([{"tool_calls": calls}])
-    return lambda messages, tools: next(replies, {"content": draft})
+    return lambda messages, tools: next(replies, {"content": json.dumps({"outcome": "answer", "text": draft, "reason": None})})
 
 
 class CriticalClaimsContractTests(TestCase):
