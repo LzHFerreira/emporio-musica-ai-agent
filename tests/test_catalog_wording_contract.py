@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pathlib import Path
 
 from django.core.management import call_command
@@ -28,3 +29,11 @@ class CatalogWordingContractTests(TestCase):
     def test_beginner_wording_with_inflection_finds_yamaha_c40(self):
         names = _names(query="um violão pra iniciante")
         self.assertIn("Yamaha C40 Nylon Natural", names)
+
+    def test_budget_sentence_with_pix_returns_violoes_within_budget(self):
+        rows = search_catalog(query="violão até 800 reais no pix", max_price_brl="800",
+                              payment_method="pix", available_only=True)["data"]
+        self.assertTrue(any("viol" in f"{r['name']} {r['category']}".lower() for r in rows))
+        for row in rows:
+            self.assertLessEqual(Decimal(row["payable_price_brl"]), Decimal("800"))
+            self.assertEqual(row["availability"], "available")
