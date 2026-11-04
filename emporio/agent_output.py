@@ -65,9 +65,12 @@ def _safe_clarification(text: str) -> bool:
         and re.search(r"[.!]\s", text) is None
         and _is_preference_question(plain)
         and not _has_store_claim(plain)
-        and "r$" not in plain
-        and not any(word in plain for word in POLICY_WORDS)
+        and not _mentions_price_or_policy(plain)
     )
+
+
+def _mentions_price_or_policy(plain: str) -> bool:
+    return "r$" in plain or any(word in plain for word in POLICY_WORDS)
 
 
 def _is_preference_question(plain: str) -> bool:

@@ -67,14 +67,18 @@ SYSTEM_PROMPT = "\n".join(
 
 def terminal(content: Any) -> dict[str, Any] | None:
     """Parse the last terminal JSON object; plain text is treated as an answer."""
-    if isinstance(content, str) and content.strip() and not re.search(r'\{\s*"outcome"', content):
-        value = {"outcome": "answer", "text": content.strip(), "reason": None}
-        return value if _terminal_valid(value) else None
+    if isinstance(content, str) and not re.search(r'\{\s*"outcome"', content):
+        return _plain_text_answer(content)
     try:
         value = _last_terminal_object(content)
     except (TypeError, IndexError, json.JSONDecodeError):
         return None
     _default_reason(value)
+    return value if _terminal_valid(value) else None
+
+
+def _plain_text_answer(content: str) -> dict[str, Any] | None:
+    value = {"outcome": "answer", "text": content.strip(), "reason": None}
     return value if _terminal_valid(value) else None
 
 

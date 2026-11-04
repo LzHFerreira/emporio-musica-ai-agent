@@ -30,15 +30,15 @@ def read_store_manual(*, snapshot_version: str | None = None, verifier=None) -> 
             return _result("error", error="source_unavailable")
         (verifier or verify_snapshot_pdf)(snapshot)
         policy = snapshot.manifest.get("policy", {})
-        page_count = policy.get("page_count", 0)
-        items = [
-            i
-            for i in policy.get("passages", [])
-            if i.get("audience") == "public" and _valid_page(i.get("page"), page_count)
-        ]
+        items = _public_passages(policy)
     except (DatabaseError, AttributeError, TypeError, KeyError, SourceImportError, OSError):
         return _result("error", error="source_unavailable")
     return _found(snapshot, items)
+
+
+def _public_passages(policy):
+    public = [i for i in policy.get("passages", []) if i.get("audience") == "public"]
+    return [i for i in public if _valid_page(i.get("page"), policy.get("page_count", 0))]
 
 
 def _valid_arguments(query, topic, snapshot_version):

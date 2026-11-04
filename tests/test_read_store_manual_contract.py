@@ -16,6 +16,11 @@ class ReadStoreManualContractTests(SourceWorkflowFixture):
         for passage in passages:
             if passage["audience"] != "public":
                 self.assertNotIn(passage["text"], joined)
+
+    def test_active_manual_returns_public_pix_pairs(self):
+        result = policy.read_store_manual()
+        passages = self.snapshot.manifest["policy"]["passages"]
+        joined = " ".join(item["text"] for item in result["data"])
         public = {(p["page"], p["text"]) for p in passages if p["audience"] == "public"}
         self.assertTrue(result["data"])
         for item in result["data"]:

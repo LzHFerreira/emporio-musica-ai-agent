@@ -115,15 +115,7 @@ def _price_mentions(text: str) -> list[tuple[str, str]]:
 
 
 def _name_mentioned(text: str, name: str, rows: list[dict[str, Any]]) -> bool:
-    generic = {
-        "violao",
-        "guitarra",
-        "instrumento",
-        "dreadnought",
-        "natural",
-        "sunburst",
-        "eletrico",
-    }
+    generic = set("violao guitarra instrumento dreadnought natural sunburst eletrico".split())
     distinctive = set(plain_text(name).split()) - generic
     siblings = [
         set(plain_text(row["name"]).split()) - generic
