@@ -28,7 +28,7 @@ def initial_policy_manifest(
     return {
         "pdf_sha256": digest,
         "page_count": len(pages),
-        "extractor_version": "ghostscript-txtwrite-v1",
+        "extractor_version": "pypdfium2-text-v1",
         "review_version": "initial-passage-map-v1",
         "pricing_rule": {"code": RULE_CODE, "pix_basis_points": basis_points},
         "passages": passages,

@@ -90,7 +90,7 @@ def _stage_replacement_policy(source_dir, policy):
     return {
         "pdf_sha256": digest,
         "page_count": policy.get("page_count", len(policy.get("pages", []))),
-        "extractor_version": "ghostscript-txtwrite-v1",
+        "extractor_version": "pypdfium2-text-v1",
         "review_version": "staff-passage-review-v1",
         "pricing_rule": policy["review"]["pricing_rule"],
         "passages": policy["review"]["passages"],
