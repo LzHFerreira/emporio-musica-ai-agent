@@ -161,6 +161,21 @@ Each case names requirement IDs, expected result and source evidence. Use determ
 
 For attacks, success is safe refusal/clarification. Evidence itself must obey minimization.
 
+Classify each reply as a policy explanation, a conditional answer, a qualification conclusion, or a performed operation; only performed operations change state.
+
+| Customer task | Authoritative source | Required behavior |
+| --- | --- | --- |
+| Price | Catalog (`products.csv`) | Exact price and stock; no invented amounts. |
+| Budget recommendation | Catalog, promotions, PIX policy (§3 p.3, §6.2 p.6) | Compute the payable price (PIX 5% only on table price) and require valid availability before filtering by budget, ranking and paginating; signal when more pages exist. |
+| Promotion + PIX | Manual §6.2 | Promotions are not cumulative; no extra 5% PIX discount on promotional prices. |
+| Availability | Catalog `stock_quantity`/`status`, Manual §7.3 p.7 | Stock 0 means unavailable; a failed lookup is uncertainty, not unavailability; never claim stock without evidence. |
+| Return | Manual §4.1 p.4 | Online purchases only, up to 7 dias corridos after receipt, no justification; original packaging, all accessories, no signs of use, so a used item does not qualify. Manual gives no in-store withdrawal right; §4.3 preference exchanges (7 dias, perfect condition) name no channel. |
+| Warranty/defect | Manual §8.1–8.3 p.7, §4.2 p.4 | Distinguish: legal warranty 90 dias from receipt (§8.1); store defect exchange up to 30 dias corridos after purchase (§4.2); after that, manufacturer warranty of 6 meses to 2 anos per certificate (§8.2), store may intermediate on request; §8.3 exclusions. No other dates. |
+| Hours | Manual §2 p.2 | Mon–Fri 09:00–18:00, Sat 09:00–13:00, Sunday and holidays closed; special dates may extend hours. No timezone stated; holiday exceptions not listed stay unknown. |
+| Own order | Order tools | Verify sender ownership before status; no cross-customer data. |
+| Unsupported question | None | Say it is unsupported; offer handoff; never guess. |
+| Follow-up | Conversation state | Resolve to prior candidates; reuse evidence; no unneeded lookup. |
+
 ### Observable source-selection cases
 
 Record consulted source types, outcomes and protected source IDs/locators; answer correctness alone is insufficient.
