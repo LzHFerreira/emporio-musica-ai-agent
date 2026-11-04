@@ -13,6 +13,8 @@ GROUNDED_PHRASES = (
     "bem avaliad",
     "mais vendid",
 )
+CLOSED_DAY = re.compile(r"domingo|feriado")
+OPENING = re.compile(r"\b(?:abr\w*|aberto|aberta|funcion\w*)\b")
 
 
 def claims_consistent(text: str, evidence: list[Any]) -> bool:
@@ -20,7 +22,18 @@ def claims_consistent(text: str, evidence: list[Any]) -> bool:
     found = plain_text(_evidence_text(evidence))
     plain = plain_text(text)
     pairs_ok = set(UNIT.findall(plain)) <= set(UNIT.findall(found))
-    return pairs_ok and all(phrase in found for phrase in GROUNDED_PHRASES if phrase in plain)
+    return (
+        pairs_ok
+        and _closed_days_respected(plain, found)
+        and all(phrase in found for phrase in GROUNDED_PHRASES if phrase in plain)
+    )
+
+
+def _closed_days_respected(plain: str, found: str) -> bool:
+    return "fechado" not in found or not any(
+        CLOSED_DAY.search(s) and OPENING.search(s) and not re.search(r"nao|fechad", s)
+        for s in re.split(r"[.!?;\n]", plain)
+    )
 
 
 def _evidence_text(evidence: list[Any]) -> str:
