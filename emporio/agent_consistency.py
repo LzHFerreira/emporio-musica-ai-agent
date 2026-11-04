@@ -1,6 +1,7 @@
 """Check that numeric and policy claims in a reply appear in the evidence."""
 
 import re
+from collections.abc import Callable
 from typing import Any
 
 from emporio.agent_claims import plain_text
@@ -18,17 +19,16 @@ OPENING = re.compile(r"\b(?:abr\w*|aberto|aberta|funcion\w*)\b")
 ENTITLEMENT = re.compile(r"\bpode(?:ra)?\s+(?:sim\s+)?(?:devolver|solicitar a devolucao)")
 
 
-def claims_consistent(text: str, evidence: list[Any]) -> bool:
-    """Require every number-unit pair and grounded phrase in text to be in evidence."""
+def consistency_checks(text: str, evidence: list[Any]) -> list[tuple[str, Callable[[], bool]]]:
+    """Name each consistency check in the order the guard applies it."""
     found = plain_text(_evidence_text(evidence))
     plain = plain_text(text)
-    pairs_ok = set(UNIT.findall(plain)) <= set(UNIT.findall(found))
-    return (
-        pairs_ok
-        and _closed_days_respected(plain, found)
-        and _grounded_phrases_present(plain, found)
-        and _entitlement_conditioned(plain)
-    )
+    return [
+        ("units", lambda: set(UNIT.findall(plain)) <= set(UNIT.findall(found))),
+        ("closed_days", lambda: _closed_days_respected(plain, found)),
+        ("phrases", lambda: _grounded_phrases_present(plain, found)),
+        ("entitlement", lambda: _entitlement_conditioned(plain)),
+    ]
 
 
 def _grounded_phrases_present(plain: str, found: str) -> bool:

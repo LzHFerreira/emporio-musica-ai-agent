@@ -6,7 +6,7 @@ from typing import Any
 from django.db.utils import DatabaseError
 
 from emporio.agent_claims import plain_text
-from emporio.agent_output import output_supported
+from emporio.agent_output import output_supported, rejection_trace
 from emporio.agent_protocol import (
     FAILURE_TEXT,
     HANDOFF_TEXT,
@@ -107,6 +107,7 @@ def _terminal_result(content, messages, state, version):
             answer["text"], answer["outcome"], state["sources"], state["evidence"]
         )
     ):
+        state["operations"].append(rejection_trace(answer, state["sources"], state["evidence"]))
         reply = content if isinstance(content, str) else ""
         messages.extend(
             [{"role": "assistant", "content": reply}, {"role": "user", "content": REJECTED_TEXT}]

@@ -9,16 +9,6 @@ from emporio.agent_numbers import numbers_supported
 POLICY_WORDS = ("devolu", "reembolso", "horario", "garantia", "frete", "pix", "troca")
 
 
-def specific_claims_supported(text: str, kinds: set[str], evidence: list[Any]) -> bool:
-    """Validate claims whose meaning depends on the source record itself."""
-    return (
-        _address_grounded(text, evidence)
-        and _product_price_bound(text, kinds, evidence)
-        and (_shipping_polarity_grounded(text, evidence))
-        and _topic_numbers_grounded(text, evidence)
-    )
-
-
 def _address_grounded(text: str, evidence: list[Any]) -> bool:
     claim = _address_words(text)
     return not claim or _address_in_evidence(claim, evidence)

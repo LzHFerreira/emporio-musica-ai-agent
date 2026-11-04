@@ -1,52 +1,84 @@
 """Conservatively check model output against returned public evidence."""
 
 import re
+from collections.abc import Callable
 from typing import Any
 
 from emporio.agent_claims import (
     POLICY_WORDS,
+    _address_grounded,
+    _product_price_bound,
+    _shipping_polarity_grounded,
+    _topic_numbers_grounded,
     contacts_grounded,
     plain_text,
-    specific_claims_supported,
 )
-from emporio.agent_consistency import claims_consistent
+from emporio.agent_consistency import consistency_checks
 from emporio.agent_numbers import numbers_supported
+
+Check = tuple[str, Callable[[], bool]]
 
 
 def output_supported(
     text: str, outcome: str, sources: list[dict[str, Any]], evidence: list[Any]
 ) -> bool:
     """Reject ungrounded numbers, personal contacts, and source-category claims."""
-    supported = _supported_response(text, outcome, _source_types(sources), evidence)
-    return supported and claims_consistent(text, evidence)
+    return first_failed_check(text, outcome, sources, evidence) is None
 
 
-def _supported_response(text, outcome, kinds, evidence):
-    if outcome not in {"answer", "clarification", "handoff"}:
-        return False
-    safe_clarification = outcome == "clarification" and _safe_clarification(text)
-    if not _text_safe_for_turn(text, safe_clarification, evidence, kinds):
-        return False
-    if safe_clarification:
-        return True
-    return _claims_supported(text, kinds, evidence)
+def first_failed_check(
+    text: str, outcome: str, sources: list[dict[str, Any]], evidence: list[Any]
+) -> str | None:
+    """Return the name of the first check that rejects the draft, or None."""
+    kinds = _source_types(sources)
+    for name, passes in _checks(text, outcome, kinds, evidence):
+        if not passes():
+            return name
+    return None
 
 
-def _text_safe_for_turn(text, safe_clarification, evidence, kinds):
-    if not _safe_text(text) or not contacts_grounded(text, evidence, kinds):
-        return False
-    return safe_clarification or numbers_supported(text, evidence)
+def rejection_trace(
+    answer: dict[str, Any] | None, sources: list[dict[str, Any]], evidence: list[Any]
+) -> dict[str, str]:
+    """Return the operation record for a rejected draft; the draft text is not stored."""
+    if answer is None:
+        return {"tool": "output_check", "outcome": "rejected", "check": "invalid_terminal"}
+    check = first_failed_check(answer["text"], answer["outcome"], sources, evidence)
+    return {"tool": "output_check", "outcome": "rejected", "check": check or "unknown"}
 
 
-def _claims_supported(text, kinds, evidence):
+def _checks(text: str, outcome: str, kinds: set[str], evidence: list[Any]) -> list[Check]:
     plain = plain_text(text)
-    if _scope_only_response(plain):
-        return specific_claims_supported(plain, kinds, evidence)
-    return (
-        bool(evidence)
-        and _claim_sources(plain, kinds)
-        and specific_claims_supported(plain, kinds, evidence)
-    )
+    safe = outcome == "clarification" and _safe_clarification(text)
+    return [
+        *_front_checks(text, outcome, kinds, evidence, safe),
+        *_claim_checks(plain, kinds, evidence, safe),
+        *consistency_checks(text, evidence),
+    ]
+
+
+def _front_checks(text, outcome, kinds, evidence, safe) -> list[Check]:
+    return [
+        ("outcome", lambda: outcome in {"answer", "clarification", "handoff"}),
+        ("unsafe_text", lambda: _safe_text(text)),
+        ("contacts", lambda: contacts_grounded(text, evidence, kinds)),
+        ("numbers", lambda: safe or numbers_supported(text, evidence)),
+    ]
+
+
+def _claim_checks(plain, kinds, evidence, safe) -> list[Check]:
+    if safe:
+        return []
+    scoped = _scope_only_response(plain)
+    return [
+        ("no_evidence", lambda: scoped or bool(evidence)),
+        ("catalog_source", lambda: scoped or _catalog_supported(plain, kinds)),
+        ("policy_source", lambda: scoped or _policy_supported(plain, kinds)),
+        ("address", lambda: _address_grounded(plain, evidence)),
+        ("price_binding", lambda: _product_price_bound(plain, kinds, evidence)),
+        ("shipping", lambda: _shipping_polarity_grounded(plain, evidence)),
+        ("topic_numbers", lambda: _topic_numbers_grounded(plain, evidence)),
+    ]
 
 
 def _scope_only_response(text):
@@ -123,10 +155,6 @@ def _degenerate(text: str) -> bool:
         for i in range(len(tokens) - 4 * n + 1)
     )
     return looped or re.search(r":[^\w.!?]*$", text.rstrip()) is not None
-
-
-def _claim_sources(text: str, kinds: set[str]) -> bool:
-    return _catalog_supported(text, kinds) and _policy_supported(text, kinds)
 
 
 def _catalog_supported(text: str, kinds: set[str]) -> bool:

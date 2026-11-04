@@ -58,6 +58,27 @@ def evaluate_model(path: Path, runs: int, model_client: Any) -> dict[str, Any]:
     }
 
 
+class DraftRecorder:
+    """Forward model calls and keep each raw string draft for the saved report."""
+
+    def __init__(self, model_client: Any) -> None:
+        """Wrap the client and start an empty draft list."""
+        self._client = model_client
+        self.drafts: list[str] = []
+
+    def __call__(self, messages: Any, tools: Any) -> Any:
+        """Record the response content when it is a string, then return the response."""
+        response = self._client(messages, tools)
+        content = response.get("content") if isinstance(response, dict) else None
+        if isinstance(content, str):
+            self.drafts.append(content)
+        return response
+
+    def __getattr__(self, name: str) -> Any:
+        """Expose the wrapped client's attributes, such as `before_tool` and `model`."""
+        return getattr(self._client, name)
+
+
 def _reply_summary(replies: list[dict[str, Any]]) -> dict[str, Any]:
     verdicts = Counter(dict.fromkeys(("PASS", "FAIL-CHECK", "FAIL-SAFE", "ERROR"), 0))
     verdicts.update(reply["verdict"] for reply in replies)
@@ -145,8 +166,9 @@ def _case_row(case: dict[str, Any], runs: int, model_client: Any) -> dict[str, A
 
 def _reply(case: dict[str, Any], model_client: Any) -> dict[str, Any]:
     started = time.monotonic()
+    recorder = DraftRecorder(model_client)
     try:
-        turn = run_turn(case["question"], sender=SENDER, model_client=model_client)
+        turn = run_turn(case["question"], sender=SENDER, model_client=recorder)
     except Exception as error:
         seconds = round(time.monotonic() - started, 2)
         return {
@@ -155,6 +177,7 @@ def _reply(case: dict[str, Any], model_client: Any) -> dict[str, Any]:
             "operations": [],
             "model_requests": None,
             "text": type(error).__name__,
+            "drafts": recorder.drafts,
         }
     return {
         "verdict": verdict(case, turn["text"]),
@@ -162,4 +185,5 @@ def _reply(case: dict[str, Any], model_client: Any) -> dict[str, Any]:
         "operations": turn.get("operations", []),
         "model_requests": turn["model_requests"],
         "text": turn["text"],
+        "drafts": recorder.drafts,
     }

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from emporio.agent import run_turn
-from emporio.model_evaluation import SENDER, _reply_summary, verdict
+from emporio.model_evaluation import SENDER, DraftRecorder, _reply_summary, verdict
 
 
 def evaluate_scenarios(path: Path, runs: int, model_client: Any) -> dict[str, Any]:
@@ -44,9 +44,10 @@ def _turn(
 ) -> dict[str, Any]:
     started = time.monotonic()
     judged = "ERROR"
+    recorder = DraftRecorder(model_client)
     try:
         result = run_turn(
-            turn["customer"], sender=sender, model_client=model_client, history=list(history)
+            turn["customer"], sender=sender, model_client=recorder, history=list(history)
         )
         judged = verdict(turn, result["text"])
     except Exception as error:
@@ -58,4 +59,5 @@ def _turn(
         "seconds": round(time.monotonic() - started, 2),
         "operations": result.get("operations", []),
         "model_requests": result["model_requests"],
+        "drafts": recorder.drafts,
     }
