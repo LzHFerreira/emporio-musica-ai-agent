@@ -60,6 +60,19 @@ class ModelVerdictTests(SimpleTestCase):
         )
         self.assertEqual(verdict(_case(TAKAMINE_RETURN), reply), "PASS")
 
+    def test_hour_inside_a_larger_number_fails_the_check(self):
+        case = {"question": SATURDAY_HOURS, "must": [], "any_groups": [["09:00", "9:00", "9h"], ["13:00", "13h"]], "forbid": []}
+        self.assertEqual(verdict(case, "No sábado abrimos das 19h às 13h."), "FAIL-CHECK")
+
+    def test_exact_saturday_hour_still_passes(self):
+        case = {"question": SATURDAY_HOURS, "must": [], "any_groups": [["09:00", "9:00", "9h"], ["13:00", "13h"]], "forbid": []}
+        self.assertEqual(verdict(case, "No sábado abrimos das 9h às 13h."), "PASS")
+
+    def test_inline_forbidden_stock_term_fails_the_check(self):
+        case = {"question": TAKAMINE_RETURN, "must": ["2199,00", "7"], "any_groups": [["dias"]], "forbid": ["esgotado", "indisponível", "sem estoque"]}
+        reply = "Takamine GD20 está esgotado por R$ 2199,00; devolução em 7 dias."
+        self.assertEqual(verdict(case, reply), "FAIL-CHECK")
+
 
 class ModelEvaluatorCommandTests(SimpleTestCase):
     def _run(self, side_effect):

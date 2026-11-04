@@ -46,7 +46,10 @@ def _normalize(text: str) -> str:
 
 
 def _hits(item: str, normalized: str) -> bool:
-    return _normalize(item) in normalized
+    term = re.escape(_normalize(item))
+    if DIGIT.search(item):
+        term = rf"(?<!\d){term}(?!\d)"
+    return re.search(term, normalized) is not None
 
 
 def _checks_pass(case: dict[str, Any], normalized: str) -> bool:
