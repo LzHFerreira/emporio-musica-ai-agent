@@ -71,6 +71,14 @@ class PublicCatalogTests(TestCase):
         result = self.lookup("VIOLAO NYLON", mode="search", category="violoes", available_only=True)
         self.assertIn("Tagima Memphis AC-39 Nylon Natural", {item["name"] for item in result["data"]})
 
+    def test_de_article_does_not_drop_nylon_guitars(self):
+        def names(query):
+            result = self.lookup(query, mode="search", category="Violões", available_only=True, payment_method="pix", max_price_brl="1000")
+            return {item["name"] for item in result["data"]}
+        self.assertEqual(names("violão de nylon"), names("violao nylon"))
+        self.assertIn("Yamaha C40 Nylon Natural", names("violão de nylon"))
+        self.assertIn("Giannini GN-15 Nylon Cedr Natural", names("violão de nylon"))
+
     def test_search_tokens_include_the_product_category(self):
         result = self.lookup("guitarras", mode="search")
         self.assertTrue(result["data"])

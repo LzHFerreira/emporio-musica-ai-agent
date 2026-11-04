@@ -20,3 +20,13 @@ class PolicyParaphraseReviewTests(SourceWorkflowFixture):
     def test_social_greeting_is_not_misclassified_as_policy_question(self):
         result = lookup_public_policy(query="Que bom dia lindo")
         self.assertEqual(result["outcome"], "not_found")
+
+    def test_weekend_hours_paraphrase_selects_hours_passage(self):
+        result = lookup_public_policy(query="Vocês abrem no domingo?")
+        self.assertEqual(result["outcome"], "found")
+        self.assertIn("hours", {row["topic"] for row in result["data"]})
+
+    def test_installment_paraphrase_selects_payment_passage(self):
+        result = lookup_public_policy(query="Aceitam cartão parcelado?")
+        self.assertEqual(result["outcome"], "found")
+        self.assertIn("payment", {row["topic"] for row in result["data"]})

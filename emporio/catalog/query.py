@@ -7,6 +7,7 @@ from django.db.models import Case, CharField, F, Func, IntegerField, Q, Value, W
 
 from emporio.catalog.models import Product, SourceSnapshot
 from emporio.catalog.normalize import normalize_text
+from emporio.policy_intents import STOP_WORDS
 
 INTERNAL_ID_PATTERN = re.compile(r"(?:[0-9]+|(?:produto|product|id) [0-9]+)")
 
@@ -14,7 +15,7 @@ INTERNAL_ID_PATTERN = re.compile(r"(?:[0-9]+|(?:produto|product|id) [0-9]+)")
 def catalog_query(snapshot: SourceSnapshot, arguments: dict[str, Any]):
     """Apply text, category, price, availability, and stable ranking in SQLite."""
     query = normalize_text(str(arguments["query"]))
-    tokens = query.split()
+    tokens = [t for t in query.split() if t not in STOP_WORDS] or query.split()
     products = (
         Product.objects.filter(snapshot=snapshot)
         .select_related("category")
