@@ -5,7 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "Django>=5.2,<5.3",
     "httpx>=0.28,<1",
-    "mcp==1.23.3",
+    "mcp==1.30.0",
     "pypdfium2>=5.14.0",
 ]
 
@@ -14,7 +14,7 @@ dev = [
   "ruff==0.16.3", "ty==0.0.72",
   "basedpyright==1.39.8", "mypy==2.1.0",
   "pydoclint==0.8.7", "import-linter==2.13",
-  "semgrep==1.172.0", "radon==6.0.1",
+  "radon==6.0.1",
   "pytest==9.2.0", "pytest-cov==7.0.0",
   "pytest-django==4.12.0",
   "django-stubs==6.0.6",

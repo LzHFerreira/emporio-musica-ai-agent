@@ -13,7 +13,7 @@ while IFS= read -r source_path; do
 done < <(cd "$repo_root" && rg --files emporio scripts tests -g '*.py' -g '*.sh')
 
 cd "$repo_root"
-uv run --locked semgrep scan \
+uvx semgrep@1.172.0 scan \
     --config auto \
     --pro \
     --error \

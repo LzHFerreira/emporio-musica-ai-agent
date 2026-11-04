@@ -14,7 +14,7 @@ The provider adapter uses a Gemma-specific private function, `respond_to_custome
 
 ## MCP server
 
-Run `uv run --env-file .env python manage.py mcp_server` to start the local stdio MCP server using the locked `mcp==1.23.3` SDK. It exposes exactly `search_catalog`, `lookup_public_policy`, `list_own_orders`, and `get_own_order_status`; schemas are recorded in [tool-schemas.json](tool-schemas.json). The tools call the same application services and authorization checks as the customer agent. MCP clients supply their own model and decide when to call tools; MCP tool service does not use `MODEL_PROVIDER` to run model inference.
+Run `uv run --env-file .env python manage.py mcp_server` to start the local stdio MCP server using the locked `mcp==1.30.0` SDK. It exposes exactly `search_catalog`, `lookup_public_policy`, `list_own_orders`, and `get_own_order_status`; schemas are recorded in [tool-schemas.json](tool-schemas.json). The tools call the same application services and authorization checks as the customer agent. MCP clients supply their own model and decide when to call tools; MCP tool service does not use `MODEL_PROVIDER` to run model inference.
 
 `EMPORIO_MCP_SENDER` is optional trusted server-side context for the two owned-order tools. Without it, those calls return the same generic denial. Sender, customer, provider, model and source-version selection are not tool arguments. An MCP client does not authenticate a sender by claiming one in tool input; order access is limited to the trusted server configuration and existing owner checks. The MCP server uses local stdio; this contract does not establish authentication for a remotely exposed MCP endpoint.
 
