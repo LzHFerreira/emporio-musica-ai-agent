@@ -54,6 +54,7 @@ SYSTEM_PROMPT = "\n".join(
         '"verification_failed"|"unsupported"|"other"}. Use reason=null para answer e '
         "clarification; handoff exige um dos quatro motivos válidos. "
         "Não inclua texto fora do JSON.",
+        'Use "facts": ["catalog-N"] para a app citar nome e estoque; nunca escreva refs no texto.',
         "Use clarification para perguntar por preferências ou dados necessários, sem afirmar "
         "fatos da loja; por exemplo, pergunte o orçamento ou se a pessoa prefere violão "
         "de 6 ou 12 cordas.",
@@ -106,11 +107,16 @@ def _terminal_valid(value: Any) -> bool:
 def _fields_valid(value: Any) -> bool:
     return (
         isinstance(value, dict)
-        and set(value) == {"outcome", "text", "reason"}
+        and set(value) - {"facts"} == {"outcome", "text", "reason"}
         and value["outcome"] in ("answer", "clarification", "handoff", "out_of_scope")
         and isinstance(value["text"], str)
         and 1 <= len(value["text"]) <= 2000
+        and ("facts" not in value or _facts_valid(value["facts"]))
     )
+
+
+def _facts_valid(v: Any) -> bool:
+    return isinstance(v, list) and 0 < len(v) <= 5 and all(isinstance(f, str) for f in v)
 
 
 def _reason_valid(outcome: str, reason: Any) -> bool:

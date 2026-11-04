@@ -54,6 +54,9 @@ def _call_handler(name, arguments, sender, model_client, version, handlers, stat
 
 def _record(call, name, value, messages, state):
     state["operations"].append({"tool": name, "outcome": value.get("outcome", "error")})
+    for row in value.get("data", []) if name == "search_catalog" else []:
+        state["refs"] = state.get("refs", 0) + 1
+        row["ref"] = f"catalog-{state['refs']}"
     state["sources"].extend(value.get("sources", []))
     if value.get("outcome") == "found":
         state["evidence"].append(value)

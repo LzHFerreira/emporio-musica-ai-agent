@@ -17,6 +17,7 @@ from emporio.agent_protocol import (
     result,
     terminal,
 )
+from emporio.agent_render import with_facts
 from emporio.agent_schemas import TOOL_SCHEMAS
 from emporio.agent_tools import ToolHandler, execute_calls
 from emporio.catalog.models import SourceSnapshot
@@ -99,7 +100,7 @@ def _step(response, messages, sender, model_client, version, handlers, state):
 
 
 def _terminal_result(content, messages, state, version):
-    answer = terminal(content)
+    answer = with_facts(terminal(content), state["evidence"])
     if (
         answer is None
         or answer["outcome"] not in ("handoff", "out_of_scope")
