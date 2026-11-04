@@ -12,12 +12,13 @@ REJECTED_TEXT = (
     "Sua resposta anterior foi rejeitada pela verificação da aplicação. Use apenas fatos "
     "e números retornados pelas ferramentas, sem repetições, e responda novamente somente "
     "com o objeto JSON final. Se precisar de dados da loja, consulte uma ferramenta antes de "
-    "responder; se o assunto não for instrumentos ou acessórios musicais, use outcome=out_of_scope."
+    "responder; se o assunto não for instrumentos musicais ou políticas da loja, "
+    "use outcome=out_of_scope."
 )
 HANDOFF_TEXT = "Encaminhei sua conversa para atendimento humano."
 OUT_OF_SCOPE_TEXT = (
-    "Esse assunto foge do que o Empório da Música atende: trabalhamos com instrumentos e "
-    "acessórios musicais. Posso ajudar com algum produto, preço ou política da loja?"
+    "Esse assunto foge do que o Empório da Música atende: trabalhamos exclusivamente com "
+    "instrumentos musicais. Posso ajudar com algum produto, preço ou política da loja?"
 )
 SYSTEM_PROMPT = "\n".join(
     (
@@ -26,7 +27,7 @@ SYSTEM_PROMPT = "\n".join(
         "Para fatos da loja, consulte as ferramentas adequadas ou evidências de contexto já "
         "revalidadas. "
         "Use catálogo, políticas ou ambos conforme a pergunta. "
-        "Para dúvidas sobre políticas da loja, leia o manual completo com read_store_manual e "
+        "Para dúvidas sobre políticas da loja, consulte o manual da loja com read_store_manual e "
         "responda apenas com o que ele diz; se o manual não tratar do assunto, diga isso "
         "claramente e ofereça atendimento humano.",
         "Respeite preferências, orçamento, forma de pagamento e candidatos identificados. "
