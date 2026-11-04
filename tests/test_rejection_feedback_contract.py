@@ -1,9 +1,13 @@
 import copy
+import json
 from django.core.management import call_command
 from django.test import TestCase
 from emporio.agent import run_turn
 from emporio.agent_protocol import REJECTED_TEXT
 from tests.test_agent_contract import DATA_DIR, tool_call
+
+def ans(text):
+    return {"content": json.dumps({"outcome": "answer", "text": text, "reason": None})}
 
 def scripted(replies, seen):
     replies = iter(replies)
@@ -15,7 +19,7 @@ class RejectionFeedbackContractTests(TestCase):
 
     def test_numbers_rejection_names_unsupported_numbers(self):
         seen = []
-        replies = [{"tool_calls": [tool_call("read_store_manual", {})]}, {"content": "Segundo o manual (página 4), o prazo é de 7 dias corridos após o recebimento, então já passou."}, {"content": "Em compras online, o prazo de devolução é de 7 dias corridos após o recebimento, então ele já passou."}]
+        replies = [{"tool_calls": [tool_call("read_store_manual", {})]}, ans("Segundo o manual (página 4), o prazo é de 7 dias corridos após o recebimento, então já passou."), ans("Em compras online, o prazo de devolução é de 7 dias corridos após o recebimento, então ele já passou.")]
         result = run_turn("Comprei pelo site e recebi há 10 dias, posso devolver?", sender="5567998123456", model_client=scripted(replies, seen))
         self.assertEqual((result["outcome"], len(seen)), ("answer", 3))
         self.assertIn(REJECTED_TEXT, seen[2][-1]["content"])
@@ -25,6 +29,6 @@ class RejectionFeedbackContractTests(TestCase):
     def test_policy_rejection_names_policy_tool(self):
         seen = []
         draft = "A troca é sempre gratuita, sem custo de frete."
-        replies = [{"tool_calls": [tool_call("search_catalog", {"query": "Takamine GD20"})]}, {"content": draft}, {"content": draft}]
+        replies = [{"tool_calls": [tool_call("search_catalog", {"query": "Takamine GD20"})]}, ans(draft), ans(draft)]
         run_turn("Quanto fica o Takamine GD20 no PIX?", sender="5567998123456", model_client=scripted(replies, seen))
         self.assertIn("lookup_public_policy", seen[2][-1]["content"])

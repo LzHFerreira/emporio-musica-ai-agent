@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -17,7 +18,7 @@ class PolicyOnlyWordingContractTests(TestCase):
 
     def _turn(self, reply):
         tool = {"tool_calls": [tool_call("lookup_public_policy", {"query": "PIX desconto", "topic": "payments"})]}
-        model = Mock(side_effect=[tool, {"content": reply}, {"content": reply}])
+        model = Mock(side_effect=[tool, {"content": json.dumps({"outcome": "answer", "text": reply, "reason": None})}, {"content": json.dumps({"outcome": "answer", "text": reply, "reason": None})}])
         return run_turn("E se eu pagar no PIX, muda alguma coisa?", sender="5567998123456", model_client=model)
 
     def test_wrong_pix_replies_are_rejected(self):

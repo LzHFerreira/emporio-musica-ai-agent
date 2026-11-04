@@ -1,3 +1,5 @@
+import json
+
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -15,7 +17,7 @@ class MoreResultsNoticeContractTests(TestCase):
     def run_with_reply(self, reply):
         replies = iter([
             {"tool_calls": [tool_call("search_catalog", {"query": "violão", "available_only": True})]},
-            {"content": reply},
+            {"content": json.dumps({"outcome": "answer", "text": reply, "reason": None})},
         ])
         return run_turn("Quais violões vocês têm?", sender="5567998123456", model_client=lambda m, t: next(replies))
 

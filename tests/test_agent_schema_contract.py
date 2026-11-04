@@ -35,7 +35,7 @@ class AgentSchemaContractTests(SimpleTestCase):
                 self.assertIsNone(terminal(value))
 
     def test_plain_text_becomes_answer_and_blank_text_is_rejected(self):
-        self.assertEqual(terminal("No sábado abrimos das 09:00 às 13:00."), {"outcome": "answer", "text": "No sábado abrimos das 09:00 às 13:00.", "reason": None})
+        self.assertIsNone(terminal("No sábado abrimos das 09:00 às 13:00."))
         self.assertIsNone(terminal("   "))
 
     def test_result_envelope_keeps_pinned_version_and_counters(self):

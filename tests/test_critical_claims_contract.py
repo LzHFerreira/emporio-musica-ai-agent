@@ -1,3 +1,5 @@
+import json
+
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -16,7 +18,7 @@ CONTROL_DRAFT = "O Giannini GF-3D Dreadnought Sunburst está sem estoque no mome
 
 def scripted(calls, draft):
     replies = iter([{"tool_calls": calls}])
-    return lambda messages, tools: next(replies, {"content": draft})
+    return lambda messages, tools: next(replies, {"content": json.dumps({"outcome": "answer", "text": draft, "reason": None})})
 
 
 class CriticalClaimsContractTests(TestCase):
