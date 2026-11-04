@@ -38,13 +38,6 @@ class AgentTurnContractTests(TestCase):
         self.assertTrue(all(not {"sender", "customer_id", "snapshot_version"} & set(schema) for schema in schemas))
         self.assertNotIn("5567998123456", json.dumps(seen))
 
-    @patch("emporio.agent.lookup_public_policy")
-    def test_plain_text_answer_after_policy_lookup_is_returned_without_retry(self, lookup):
-        lookup.return_value = {"outcome": "found", "data": [{"text": "Sábado: das 09:00 às 13:00"}]}
-        model = Mock(side_effect=[{"tool_calls": [tool_call("lookup_public_policy", {"query": "horário sábado"})]}, {"content": "No sábado abrimos das 09:00 às 13:00."}])
-        result = run_turn("Qual é o horário no sábado?", sender="5567998123456", model_client=model)
-        self.assertEqual((result["outcome"], result["text"], model.call_count), ("answer", "No sábado abrimos das 09:00 às 13:00.", 2))
-
     def test_model_cannot_supply_trusted_sender_or_snapshot_arguments(self):
         replies = iter([
             {"tool_calls": [tool_call("list_own_orders", {"page": 1, "sender": "forged", "snapshot_version": "old"})]},

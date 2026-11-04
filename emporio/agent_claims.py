@@ -144,13 +144,25 @@ def _shipping_polarity_grounded(text: str, evidence: list[Any]) -> bool:
 
 
 def _topic_numbers_grounded(text: str, evidence: list[Any]) -> bool:
-    rows = [row for item in evidence if isinstance(item, dict) for row in item.get("data", [item])]
+    rows = _evidence_rows(evidence)
     return all(
-        numbers_supported(sentence, [r for r in rows if term in plain_text(_evidence_text(r))])
-        for sentence in re.split(r"[!?;]|\.(?!\d)", re.sub(r"r\$\s*[\d.,]+", "", text))
+        numbers_supported(sentence, _rows_about(rows, term))
+        for sentence in _topic_sentences(text)
         for term in POLICY_WORDS
         if term in sentence
     )
+
+
+def _evidence_rows(evidence: list[Any]) -> list[Any]:
+    return [row for item in evidence if isinstance(item, dict) for row in item.get("data", [item])]
+
+
+def _topic_sentences(text: str) -> list[str]:
+    return re.split(r"[!?;]|\.(?!\d)", re.sub(r"r\$\s*[\d.,]+", "", text))
+
+
+def _rows_about(rows: list[Any], term: str) -> list[Any]:
+    return [r for r in rows if term in plain_text(_evidence_text(r))]
 
 
 SHIPPING_PARTIES = {
