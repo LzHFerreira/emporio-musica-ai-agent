@@ -9,6 +9,7 @@ from emporio.agent_claims import (
     plain_text,
     specific_claims_supported,
 )
+from emporio.agent_consistency import claims_consistent
 from emporio.agent_numbers import numbers_supported
 
 
@@ -16,7 +17,8 @@ def output_supported(
     text: str, outcome: str, sources: list[dict[str, Any]], evidence: list[Any]
 ) -> bool:
     """Reject ungrounded numbers, personal contacts, and source-category claims."""
-    return _supported_response(text, outcome, _source_types(sources), evidence)
+    supported = _supported_response(text, outcome, _source_types(sources), evidence)
+    return supported and claims_consistent(text, evidence)
 
 
 def _supported_response(text, outcome, kinds, evidence):
