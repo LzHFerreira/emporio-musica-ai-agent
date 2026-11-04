@@ -4,6 +4,7 @@ import json
 import re
 import statistics
 import time
+import unicodedata
 from collections import Counter
 from itertools import chain
 from pathlib import Path
@@ -28,7 +29,19 @@ def verdict(case: dict[str, Any], text: str) -> str:
     """
     if text in FAIL_SAFE_TEXTS:
         return "FAIL-SAFE"
+    if _critical_hit(case, text):
+        return "INCORRECT"
     return "PASS" if _passes(case, text) else "FAIL-CHECK"
+
+
+def _critical_hit(case: dict[str, Any], text: str) -> bool:
+    folded = _fold(text)
+    return any(re.search(item["claim"], folded) for item in case.get("critical", []))
+
+
+def _fold(text: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", text)
+    return "".join(char for char in decomposed if not unicodedata.combining(char)).lower()
 
 
 def _passes(case: dict[str, Any], text: str) -> bool:
