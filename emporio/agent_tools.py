@@ -7,6 +7,11 @@ from typing import Any
 from emporio.agent_schemas import arguments_valid, parse_call
 
 ToolHandler = Callable[[dict[str, Any], str, str], dict[str, Any]]
+REF_PREFIXES = {
+    "search_catalog": "catalog",
+    "list_own_orders": "order",
+    "get_own_order_status": "order",
+}
 
 
 def execute_calls(
@@ -54,9 +59,11 @@ def _call_handler(name, arguments, sender, model_client, version, handlers, stat
 
 def _record(call, name, value, messages, state):
     state["operations"].append({"tool": name, "outcome": value.get("outcome", "error")})
-    for row in value.get("data", []) if name == "search_catalog" else []:
-        state["refs"] = state.get("refs", 0) + 1
-        row["ref"] = f"catalog-{state['refs']}"
+    prefix = REF_PREFIXES.get(name)
+    for row in value.get("data", []) if prefix else []:
+        counts = state.setdefault("refs", {})
+        counts[prefix] = counts.get(prefix, 0) + 1
+        row["ref"] = f"{prefix}-{counts[prefix]}"
     state["sources"].extend(value.get("sources", []))
     if value.get("outcome") == "found":
         state["evidence"].append(value)

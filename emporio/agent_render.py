@@ -26,7 +26,18 @@ def _price(value):
     return "R$ " + f"{amount:,.2f}".translate(str.maketrans(",.", ".,"))
 
 
+def _order_line(row):
+    line = f"Pedido {row['order_id']}: {row['status']}"
+    if row.get("tracking_code"):
+        line += f"; rastreio {row['tracking_code']}"
+    if row.get("estimated_delivery"):
+        line += f"; previsão de entrega {row['estimated_delivery']}"
+    return line + "."
+
+
 def _line(row):
+    if row["ref"].startswith("order-"):
+        return _order_line(row)
     label = LABELS.get(row.get("availability"), LABELS["unknown"])
     condition = row.get("payment_condition")
     suffix = f" ({condition})" if condition else ""
