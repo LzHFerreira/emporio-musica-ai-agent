@@ -11,7 +11,8 @@ FAILURE_TEXT = (
 REJECTED_TEXT = (
     "Sua resposta anterior foi rejeitada pela verificação da aplicação. Use apenas fatos "
     "e números retornados pelas ferramentas, sem repetições, e responda novamente somente "
-    "com o objeto JSON final."
+    "com o objeto JSON final. Se precisar de dados da loja, consulte uma ferramenta antes de "
+    "responder; se o assunto não for instrumentos ou acessórios musicais, use outcome=out_of_scope."
 )
 HANDOFF_TEXT = "Encaminhei sua conversa para atendimento humano."
 OUT_OF_SCOPE_TEXT = (
@@ -78,6 +79,8 @@ def _last_terminal_object(content: Any) -> Any:
 def _default_reason(value: Any) -> None:
     if isinstance(value, dict) and value.get("outcome") != "handoff":
         value.setdefault("reason", None)
+        if value.get("outcome") == "out_of_scope":
+            value["reason"] = None
 
 
 def _terminal_valid(value: Any) -> bool:

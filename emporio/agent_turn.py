@@ -20,6 +20,8 @@ from emporio.agent_tools import ToolHandler, execute_calls
 from emporio.catalog.models import SourceSnapshot
 from emporio.chat.privacy import minimize_text
 
+_RETRY = object()
+
 
 def run_turn(
     text: str,
@@ -76,6 +78,8 @@ def _loop(messages, sender, model_client, version, handlers, state):
 
 
 def _step(response, messages, sender, model_client, version, handlers, state):
+    if response is _RETRY:
+        return True, None
     calls = response.get("tool_calls")
     if calls:
         done = execute_calls(
@@ -116,6 +120,8 @@ def _request(model_client, messages, state):
     state["requests"] += 1
     try:
         response = model_client(messages, TOOL_SCHEMAS)
+    except ValueError:
+        return _RETRY
     except Exception:
         return None
     return response if isinstance(response, dict) else None

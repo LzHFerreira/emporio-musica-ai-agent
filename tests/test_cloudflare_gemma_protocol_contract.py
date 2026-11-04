@@ -8,7 +8,7 @@ import httpx
 from django.test import SimpleTestCase
 
 from emporio.agent_output import output_supported
-from emporio.agent_protocol import FAILURE_TEXT
+from emporio.agent_protocol import FAILURE_TEXT, OUT_OF_SCOPE_TEXT
 from emporio.agent_schemas import TOOL_SCHEMAS
 from emporio.agent_turn import run_turn
 from emporio.chat.cloudflare import CloudflareClient
@@ -151,7 +151,7 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         model, http = _client_for(body)
         search = Mock(return_value={"outcome": "found", "data": [], "sources": [], "page": None})
         result = run_turn("Pode procurar?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={"search_catalog": search})
-        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 1, 0))
+        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 3, 0))
         search.assert_not_called()
         http.close()
 
@@ -188,8 +188,16 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         supported.assert_called_with(claim, "answer", [], [])
         http.close()
 
+    def test_gemma_out_of_scope_reply_with_reason_is_accepted(self):
+        reply = {"outcome": "out_of_scope", "text": "Não vendemos pizza.", "reason": "unsupported"}
+        body = {"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call(json.dumps(reply, ensure_ascii=False))]}, "finish_reason": "tool_calls"}], "model": GEMMA}
+        model, http = _client_for(body)
+        result = run_turn("Vocês vendem pizza?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
+        self.assertEqual((result["model_requests"], result["text"]), (1, OUT_OF_SCOPE_TEXT))
+        http.close()
+
     def test_gemma_invalid_terminal_reply_is_retried_not_raised(self):
-        invalid = {"outcome": "out_of_scope", "text": "Não vendemos pizza.", "reason": "unsupported"}
+        invalid = {"outcome": "maybe", "text": "Não vendemos pizza.", "reason": None}
         body = {"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call(json.dumps(invalid, ensure_ascii=False))]}, "finish_reason": "tool_calls"}], "model": GEMMA}
         model, http = _client_for(body)
         result = run_turn("Vocês vendem pizza?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
