@@ -130,7 +130,9 @@ def _claim_sources(text: str, kinds: set[str]) -> bool:
 
 
 def _catalog_supported(text: str, kinds: set[str]) -> bool:
-    words = ("disponivel", "estoque", "preco", "violao", "guitarra", "instrumento")
+    words = ["disponivel", "estoque"]
+    if "r$" in text:
+        words += ["preco", "violao", "guitarra", "instrumento"]
     return not any(word in text for word in words) or "catalog" in kinds
 
 
