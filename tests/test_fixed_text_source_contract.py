@@ -17,3 +17,11 @@ def test_rejected_text_excludes_accessories():
 def test_system_prompt_does_not_promise_full_manual():
     """System prompt does not promise the full manual is returned by read_store_manual."""
     assert "manual completo" not in SYSTEM_PROMPT
+
+
+def test_system_prompt_forbids_repeating_customer_numbers():
+    assert "Não repita números ditos pelo cliente" in SYSTEM_PROMPT
+
+
+def test_system_prompt_asks_before_confirming():
+    assert "pergunte antes de confirmar" in SYSTEM_PROMPT

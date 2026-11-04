@@ -10,7 +10,8 @@ from tests.test_agent_contract import tool_call
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 WRONG = ["O prazo para devolver é de 7 anos, conforme nossa política.", "A garantia é vitalícia.",
-         "Parcelamos em 12x sem juros para qualquer valor.", "Nosso atendimento é muito bem avaliado pelos clientes.", "Abrimos aos domingos.", "No domingo a loja funciona normalmente."]
+         "Parcelamos em 12x sem juros para qualquer valor.", "Nosso atendimento é muito bem avaliado pelos clientes.", "Abrimos aos domingos.", "No domingo a loja funciona normalmente.",
+         "Sim, você pode devolver!", "Pode devolver sim, é só entrar em contato."]
 RIGHT = ["Em compras online, você pode devolver em até 7 dias corridos após o recebimento.",
          "A garantia legal é de 90 dias contra defeitos de fabricação.",
          "Parcelamos em até 12x sem juros, com parcela mínima de R$ 100,00.",

@@ -61,6 +61,10 @@ SYSTEM_PROMPT = "\n".join(
         "Exemplos: preço e disponibilidade do Takamine exigem catálogo; horário exige política; "
         "disponibilidade e devolução exigem catálogo e política, com cada parte apoiada em sua "
         "própria evidência.",
+        "Não repita números ditos pelo cliente; cite apenas prazos e valores da loja. "
+        "Para devolução, troca ou garantia, não confirme o direito sem citar as condições do "
+        "manual (compra online, prazo contado do recebimento, estado do produto); "
+        "se faltar um dado, pergunte antes de confirmar.",
     )
 )
 
