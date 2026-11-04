@@ -4,9 +4,11 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from emporio.agent_claims import plain_text
+from emporio.agent_availability import availability_bound
+from emporio.agent_claims import _catalog_rows, _named_products, plain_text
 
-UNIT = re.compile(r"(\d+)\s*(?:\([^)]*\)\s*)?(dia|ano|mes|semana|hora)(?:e?s)?\b")
+UNIT = re.compile(r"(\d+)\s*(?:\([^)]*\)\s*)?(dia|ano|mes|semana|hora)(?:e?s)?(\s+uteis)?\b")
+USED = re.compile(r"\b(?:usad\w*|usou|usei|utilizad\w*)\b")
 GROUNDED_PHRASES = (
     "vitalici",
     "qualquer valor",
@@ -16,6 +18,9 @@ GROUNDED_PHRASES = (
 )
 CLOSED_DAY = re.compile(r"domingo|feriado")
 OPENING = re.compile(r"\b(?:abr\w*|aberto|aberta|funcion\w*)\b")
+PIX_STACKING = re.compile(
+    r"\b(?:mais|adicional|alem|acumul|cumulativ|soma|sobre (?:esse|este|o) (?:valor|preco))"
+)
 ENTITLEMENT = re.compile(r"\bpode(?:ra)?\s+(?:sim\s+)?(?:devolver|solicitar a devolucao)")
 
 
@@ -28,7 +33,31 @@ def consistency_checks(text: str, evidence: list[Any]) -> list[tuple[str, Callab
         ("closed_days", lambda: _closed_days_respected(plain, found)),
         ("phrases", lambda: _grounded_phrases_present(plain, found)),
         ("entitlement", lambda: _entitlement_conditioned(plain)),
+        ("availability", lambda: availability_bound(text, evidence)),
+        ("pix_stacking", lambda: pix_not_stacked(text, evidence)),
     ]
+
+
+def pix_not_stacked(text: str, evidence: list[Any]) -> bool:
+    """Reject a PIX discount claimed on top of a promotional catalog price."""
+    plain = plain_text(text)
+    promotional = [row for row in _catalog_rows(evidence) if _is_promotional(row)]
+    if not _named_products(plain, promotional):
+        return True
+    return not any(_stacking_sentence(s) for s in re.split(r"[.!?;\n]", plain))
+
+
+def _is_promotional(row: dict[str, Any]) -> bool:
+    return (row.get("promotion") or {}).get("state") == "active"
+
+
+def _stacking_sentence(sentence: str) -> bool:
+    return (
+        "pix" in sentence
+        and ("desconto" in sentence or "%" in sentence)
+        and PIX_STACKING.search(sentence) is not None
+        and not re.search(r"\b(?:nao|sem)\b", sentence)
+    )
 
 
 def _grounded_phrases_present(plain: str, found: str) -> bool:
@@ -43,6 +72,8 @@ def _closed_days_respected(plain: str, found: str) -> bool:
 
 
 def _entitlement_conditioned(plain: str) -> bool:
+    if any(ENTITLEMENT.search(s) and USED.search(s) for s in re.split(r"[.!?;\n]", plain)):
+        return False
     return not ENTITLEMENT.search(plain) or (
         "dias" in plain
         and any(term in plain for term in ("online", "site", "internet", "recebimento"))
