@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 from django.db.models import Case, CharField, F, Func, IntegerField, Q, Value, When
+from django.db.models.functions import Cast, Concat, Lower, Replace
 
 from emporio.catalog.models import Product, SourceSnapshot
 from emporio.catalog.normalize import normalize_text
@@ -27,11 +28,13 @@ def catalog_query(snapshot: SourceSnapshot, arguments: dict[str, Any]):
         .prefetch_related("promotions")
     )
     products = products.annotate(effective_cents=_price_field(arguments["payment_method"]))
+    products = products.annotate(match_text=_match_text())
     products = products.annotate(match_tier=_match_tier(query, tokens))
     products = _filter_text(products, query, tokens)
     products = _filter_category(products, arguments["category"])
     products = _filter_availability(products, arguments["available_only"])
     products = _filter_budget(products, arguments["price_cents"])
+    products = _prefer_exact(products)
     return products.order_by("match_tier", "effective_cents", "normalized_name", "source_id")
 
 
@@ -45,7 +48,13 @@ def _filter_text(products, query: str, tokens: list[str]):
     """Filter descriptive queries while rejecting internal-key references."""
     if query and _internal_id_reference(tokens):
         return products.none()
-    return products.filter(match_tier__lt=3) if query else products
+    return products.filter(match_tier__lt=4) if query else products
+
+
+def _prefer_exact(products):
+    """Keep name, category, and spec matches when any survive every other filter."""
+    exact = products.filter(match_tier__lte=2)
+    return exact if exact.exists() else products
 
 
 def _filter_category(products, category: Any):
@@ -79,22 +88,31 @@ def _match_tier(query: str, tokens: list[str]):
     if not query:
         return Value(3, output_field=IntegerField())
     name_match = Q()
+    field_match = Q()
     search_match = Q()
     for token in tokens:
         name_match &= _token_filter("normalized_name", token)
+        field_match &= _token_filter("match_text", token)
         search_match &= _token_filter("normalized_search_text", token)
     return Case(
         When(normalized_name=query, then=Value(0)),
         When(name_match, then=Value(1)),
-        When(search_match, then=Value(2)),
-        default=Value(3),
+        When(field_match, then=Value(2)),
+        When(search_match, then=Value(3)),
+        default=Value(4),
         output_field=IntegerField(),
     )
 
 
+def _match_text() -> Concat:
+    """Join name, category, and specs for matching, leaving out the description."""
+    specs = Lower(Replace(Cast("specs", CharField()), Value('"'), Value(" ")))
+    return Concat(F("normalized_name"), Value(" "), F("normalized_category"), Value(" "), specs)
+
+
 def _token_filter(field: str, token: str) -> Q:
     """Match one normalized word at exact token boundaries."""
-    pattern = re.sub(r"(?<=\D)(?=\d)", " ?", token)
+    pattern = re.sub(r"ao$", "(ao|oes)", re.sub(r"(?<=\D)(?=\d)", " ?", token))
     return Q(**{f"{field}__regex": rf"(^| ){pattern}s?( |$)"})
 
 

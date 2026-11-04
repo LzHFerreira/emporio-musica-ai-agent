@@ -13,6 +13,15 @@ def _names(**arguments):
     return [row["name"] for row in search_catalog(**arguments)["data"]]
 
 
+def _all_rows(**arguments):
+    rows, page = [], 1
+    while page:
+        result = search_catalog(page=page, **arguments)
+        rows += result["data"]
+        page = page + 1 if result["has_more"] else None
+    return rows
+
+
 class CatalogWordingContractTests(TestCase):
     def setUp(self):
         call_command("load_sources", source_dir=str(DATA_DIR), verbosity=0)
@@ -37,3 +46,14 @@ class CatalogWordingContractTests(TestCase):
         for row in rows:
             self.assertLessEqual(Decimal(row["payable_price_brl"]), Decimal("800"))
             self.assertEqual(row["availability"], "available")
+
+    def test_violao_query_excludes_description_only_ukulele(self):
+        self.assertNotIn("Ukuleles", [row["category"] for row in _all_rows(query="violão")])
+
+    def test_ukulele_query_still_finds_kala_ka_b_baritono(self):
+        rows = _all_rows(query="ukulele")
+        self.assertIn("Kala KA-B Barítono Mogno", [row["name"] for row in rows])
+
+    def test_description_only_word_still_finds_kala_ka_b_baritono(self):
+        rows = _all_rows(query="ponte")
+        self.assertIn("Kala KA-B Barítono Mogno", [row["name"] for row in rows])
