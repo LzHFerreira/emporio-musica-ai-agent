@@ -7,8 +7,9 @@ from django.db.models import Case, CharField, F, Func, IntegerField, Q, Value, W
 
 from emporio.catalog.models import Product, SourceSnapshot
 from emporio.catalog.normalize import normalize_text
-from emporio.policy_intents import STOP_WORDS
+from emporio.policy_intents import STOP_WORDS as POLICY_STOP_WORDS
 
+STOP_WORDS = POLICY_STOP_WORDS | {"pra", "quero"}
 INTERNAL_ID_PATTERN = re.compile(r"(?:[0-9]+|(?:produto|product|id) [0-9]+)")
 
 
@@ -89,12 +90,8 @@ def _match_tier(query: str, tokens: list[str]):
 
 def _token_filter(field: str, token: str) -> Q:
     """Match one normalized word at exact token boundaries."""
-    return (
-        Q(**{field: token})
-        | Q(**{f"{field}__startswith": f"{token} "})
-        | Q(**{f"{field}__endswith": f" {token}"})
-        | Q(**{f"{field}__contains": f" {token} "})
-    )
+    pattern = re.sub(r"(?<=\D)(?=\d)", " ?", token)
+    return Q(**{f"{field}__regex": rf"(^| ){pattern}s?( |$)"})
 
 
 def _internal_id_reference(tokens: list[str]) -> bool:
