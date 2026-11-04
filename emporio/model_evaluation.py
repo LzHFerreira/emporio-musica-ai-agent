@@ -13,7 +13,7 @@ from emporio.agent_protocol import FAILURE_TEXT, HANDOFF_TEXT
 SENDER = "5567999990000"
 FAIL_SAFE_TEXTS = {FAILURE_TEXT, HANDOFF_TEXT}
 NEGATION = re.compile(r"\b(?:não|nao|nunca|nenhum|nenhuma)\b", re.IGNORECASE)
-CLAUSE_BREAK = re.compile(r"[.;!?\n]+")
+CLAUSE_BREAK = re.compile(r"[.;!?\n]+|,\s+")
 DIGIT = re.compile(r"\d")
 
 

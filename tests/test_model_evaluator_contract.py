@@ -52,6 +52,14 @@ class ModelVerdictTests(SimpleTestCase):
         reply = "No sábado abrimos das 9h às 13h; não abrimos aos domingos."
         self.assertEqual(verdict(_case(SATURDAY_HOURS), reply), "PASS")
 
+    def test_conditional_negation_does_not_fail_the_check(self):
+        """A conditional 'não gostar' clause must not negate the '7 dias' return terms."""
+        reply = (
+            "Temos o Takamine GD20 disponível! Ele está saindo por R$ 2.199,00. "
+            "Se você receber o violão e não gostar, pode solicitar a devolução em até 7 dias corridos após o recebimento."
+        )
+        self.assertEqual(verdict(_case(TAKAMINE_RETURN), reply), "PASS")
+
 
 class ModelEvaluatorCommandTests(SimpleTestCase):
     def _run(self, side_effect):
