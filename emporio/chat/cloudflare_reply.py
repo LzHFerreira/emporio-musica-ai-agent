@@ -10,7 +10,8 @@ _INSTRUCTION = (
     "the business tools. Put the final answer in a separate call. Never batch this reply call "
     "with any business-tool call. Use an empty catalog query only for general browsing. If a "
     "specific product reference is missing or ambiguous, ask the customer to clarify rather "
-    "than repeating an empty or ambiguous search. Do not send final prose outside this function."
+    "than repeating an empty or ambiguous search. Put catalog refs in facts, never in the text. "
+    "Do not send final prose outside this function."
 )
 _TOOL = {
     "type": "function",
@@ -25,6 +26,7 @@ _TOOL = {
                     "enum": ["answer", "clarification", "handoff", "out_of_scope"],
                 },
                 "text": {"type": "string", "minLength": 1, "maxLength": 2000},
+                "facts": {"type": "array", "items": {"type": "string"}, "maxItems": 5},
                 "reason": {
                     "type": ["string", "null"],
                     "enum": [

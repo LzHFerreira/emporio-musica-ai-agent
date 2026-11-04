@@ -35,7 +35,7 @@ def _line(row):
 
 def with_facts(answer: dict | None, evidence: list[dict]) -> dict | None:
     """Append one availability line per fact ref; return None when a ref is unknown."""
-    if answer is None or re.search(r"catalog-\d+", answer.get("text", "")):
+    if answer is None or re.search(r"catalog-\d+", answer.get("text", ""), re.IGNORECASE):
         return None
     if "facts" not in answer:
         return answer

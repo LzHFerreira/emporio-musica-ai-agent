@@ -9,6 +9,8 @@ from django.test import SimpleTestCase
 
 from emporio.agent_output import output_supported
 from emporio.agent_protocol import FAILURE_TEXT, OUT_OF_SCOPE_TEXT
+from emporio.agent_protocol import terminal
+from emporio.chat.cloudflare_reply import gemma_request, normalize_reply
 from emporio.agent_schemas import TOOL_SCHEMAS
 from emporio.agent_turn import run_turn
 from emporio.chat.cloudflare import CloudflareClient
@@ -20,6 +22,7 @@ REPLY_SCHEMA = {
         "outcome": {"type": "string", "enum": ["answer", "clarification", "handoff", "out_of_scope"]},
         "text": {"type": "string", "minLength": 1, "maxLength": 2000},
         "reason": {"type": ["string", "null"], "enum": [None, "customer_request", "verification_failed", "unsupported", "other"]},
+        "facts": {"type": "array", "items": {"type": "string"}, "maxItems": 5},
     },
     "required": ["outcome", "text", "reason"],
     "additionalProperties": False,
@@ -130,6 +133,16 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
             with self.assertRaises(ValueError):
                 model([{"role": "user", "content": "oi"}], copy.deepcopy(TOOL_SCHEMAS))
             http.close()
+
+    def test_reply_tool_declares_optional_facts_array(self):
+        control = gemma_request([], [])[1][-1]["function"]["parameters"]
+        self.assertEqual(control["properties"]["facts"], {"type": "array", "items": {"type": "string"}, "maxItems": 5})
+        self.assertNotIn("facts", control["required"])
+
+    def test_reply_call_with_facts_keeps_facts_in_terminal(self):
+        arguments = {"outcome": "answer", "text": "Veja abaixo:", "facts": ["catalog-1"], "reason": None}
+        message = normalize_reply({"tool_calls": [_tool_call(json.dumps(arguments))]})
+        self.assertEqual(terminal(message["content"])["facts"], ["catalog-1"])
 
     def test_glm_keeps_four_business_tools_without_gemma_protocol(self):
         body = {"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call('{"mode":"search"}', "search_catalog", "browse")]}, "finish_reason": "tool_calls"}]}

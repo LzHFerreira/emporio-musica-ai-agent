@@ -40,6 +40,11 @@ class RenderedFactsContractTests(TestCase):
         r, _ = run([final(["catalog-1"], "Temos em estoque:")] * 5)
         self.assertNotIn("Temos em estoque", r["text"])
         self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+    def test_case_variant_ref_never_reaches_customer(self):
+        for text in ("Veja Catalog-1.", "Veja CATALOG-1."):
+            r, _ = run([final(["catalog-1"], text)] * 5)
+            self.assertNotIn("catalog-1", r["text"].lower())
+            self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
     def test_neutral_text_with_facts_renders_line(self):
         r, _ = run([final(["catalog-1"], "Encontrei este modelo:")])
         self.assertIn("Encontrei este modelo:", r["text"])
