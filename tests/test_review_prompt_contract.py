@@ -79,3 +79,11 @@ def test_polite_store_scope_redirect_needs_no_factual_tool_evidence():
     assert output_supported(
         "Posso ajudar com dúvidas sobre a loja. O que gostaria de saber?", "answer", [], []
     )
+
+def test_runtime_prompt_names_store_manual_tool():
+    captured = {}
+    def model(messages, tools):
+        captured["system"] = messages[0]["content"]
+        return {"content": json.dumps({"outcome": "answer", "text": "Olá!", "reason": None})}
+    run_turn("Oi", sender="5567998123456", model_client=model, snapshot_version="v1", handlers={})
+    assert "read_store_manual" in captured["system"]

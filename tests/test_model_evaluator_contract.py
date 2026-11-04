@@ -85,12 +85,12 @@ class ModelEvaluatorCommandTests(SimpleTestCase):
     def test_command_reports_pass_rate_for_every_case_and_run(self):
         reply = {"text": "R$ 2.199,00", "model_requests": 1}
         report, turn = self._run(lambda *args, **kwargs: reply)
-        self.assertEqual(report["case_count"], 5)
-        self.assertEqual(report["total"], 10)
+        self.assertEqual(report["case_count"], 9)
+        self.assertEqual(report["total"], 18)
         self.assertEqual(report["runs"], 2)
         self.assertEqual(report["cases"][0]["passed"], 2)
         self.assertIn("model_provider", report)
-        self.assertEqual(turn.call_count, 10)
+        self.assertEqual(turn.call_count, 18)
 
     def test_run_turn_exception_is_recorded_as_error(self):
         report, _ = self._run(RuntimeError("boom"))

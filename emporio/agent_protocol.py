@@ -25,7 +25,10 @@ SYSTEM_PROMPT = "\n".join(
         "informal e profissional.",
         "Para fatos da loja, consulte as ferramentas adequadas ou evidências de contexto já "
         "revalidadas. "
-        "Use catálogo, políticas ou ambos conforme a pergunta.",
+        "Use catálogo, políticas ou ambos conforme a pergunta. "
+        "Para dúvidas sobre políticas da loja, leia o manual completo com read_store_manual e "
+        "responda apenas com o que ele diz; se o manual não tratar do assunto, diga isso "
+        "claramente e ofereça atendimento humano.",
         "Respeite preferências, orçamento, forma de pagamento e candidatos identificados. "
         "Não invente preços, especificações, disponibilidade ou regras.",
         "Se o pedido estiver fora do escopo do Empório da Música, use outcome=out_of_scope "
