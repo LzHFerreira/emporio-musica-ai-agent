@@ -23,6 +23,8 @@ Historical OpenRouter requests received HTTP 429 before completion; an early loc
 
 ## Automated checks
 
+**Current revision (`33bb8b3`, 2026-11-04):** `scripts/run_quality_gates.sh` exited 0 with all 13 gates passing: 409 tests with 95.41% coverage, code-size/Radon on 204 Python files, Semgrep Pro (1,201 rules, 136 files, zero findings), and the type, lint, import, Django and migration checks. The earlier `1406898` code-size failure is resolved. The records below are historical.
+
 The final full suite on 2026-11-03 passed: **381 tests, 95.41% coverage** across 5,262 statements, with seven SQLite `ResourceWarning`s for unclosed database connections reported through Django internals. Loopback access was enabled for local transport tests. Provider responses in automated contracts are mocked; these results do not qualify generated answers or live Meta compatibility.
 
 Final static checks passed: Ruff format/lint, ty, basedpyright (zero errors/warnings/notes), mypy (115 files), pydoclint, import-linter (166 files, 517 dependencies), code-size/Radon (197 Python files), Django checks, migration consistency, offline `uv` lock check, and `git diff --check`. Semgrep Pro passed with exit 0: 134 targets scanned, 1,201 rules run, zero findings (zero blocking), and 78 ignored files (not rerun after the 2026-11-03 model-quality changes). The scan covered `manage.py` and Python/shell sources under `emporio/`, `scripts/` and `tests/`. An earlier attempt was blocked by automatic approval review pending source-export authorization; the user later authorized the scoped scan. The result does not cover ignored files or establish full challenge acceptance.
