@@ -60,6 +60,12 @@
         ],
         "bind": [],
         "ordered": [],
+        "critical": [
+          {
+            "claim": "ganha mais \\d|(?<!nao )sai mais barato|(?<!nao da para )somar o desconto",
+            "label": "incorrect"
+          }
+        ],
         "note": "Manual 6.2: PIX 5% does not stack on promotional prices. Correct answer keeps R$323,10 (or says the PIX discount does not apply). Must NOT show 306,95 (5% off the promo price)."
       }
     ]
@@ -86,6 +92,12 @@
         ],
         "bind": [],
         "ordered": [],
+        "critical": [
+          {
+            "claim": "(giannini|gf-?3d|dreadnought)[^.;!?]*?(?:(?<!nao esta )\\bdisponivel\\b|(?<!sem )(?<!nao esta disponivel )\\bem estoque)",
+            "label": "incorrect"
+          }
+        ],
         "note": "Giannini GF-3D Dreadnought Sunburst (product 96) has stock_quantity 0. Manual 7.3: say it is temporarily unavailable, never confirm stock, and suggest similar in-stock models, e.g. Giannini GF-1R Folk Sunburst R$579,90 (product 88, stock 7) or Shelby SGD-195E Sunburst R$799,00 (product 107, stock 6)."
       }
     ]
@@ -274,6 +286,12 @@
         ],
         "bind": [],
         "ordered": [],
+        "critical": [
+          {
+            "claim": "(?<!nao esta )(?<!nao esta mais )dentro do prazo",
+            "label": "incorrect"
+          }
+        ],
         "note": "Manual 4.1: right of regret for online purchases is 7 days corridos counted from receipt. 10 days has passed, so the regret right no longer applies. Defect exchanges are 30 days (4.2), and the agent should mention that defects are handled separately. Must not promise a return."
       }
     ]
