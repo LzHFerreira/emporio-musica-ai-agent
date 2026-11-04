@@ -98,3 +98,18 @@ class ModelEvaluatorCommandTests(SimpleTestCase):
         self.assertTrue(all(reply["verdict"] == "ERROR" for reply in replies))
         self.assertTrue(all(reply["text"] == "RuntimeError" for reply in replies))
         self.assertEqual(report["passed"], 0)
+
+    def test_report_separates_verdicts_and_keeps_operation_traces(self):
+        reply = {
+            "text": "O Takamine GD20 custa R$ 2.199,00.",
+            "model_requests": 2,
+            "operations": [{"tool": "search_catalog", "outcome": "found"}],
+        }
+        report, _ = self._run(lambda *args, **kwargs: reply)
+        self.assertEqual(set(report["verdicts"]), {"PASS", "FAIL-CHECK", "FAIL-SAFE", "ERROR"})
+        self.assertEqual(sum(report["verdicts"].values()), report["total"])
+        self.assertEqual(report["verdicts"]["PASS"], report["passed"])
+        first = report["cases"][0]["replies"][0]
+        self.assertEqual(first["operations"], [{"tool": "search_catalog", "outcome": "found"}])
+        self.assertIsInstance(first["seconds"], float)
+        self.assertIsInstance(report["median_seconds"], float)

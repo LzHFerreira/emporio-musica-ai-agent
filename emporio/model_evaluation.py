@@ -2,6 +2,8 @@
 
 import json
 import re
+import statistics
+import time
 from collections import Counter
 from itertools import chain
 from pathlib import Path
@@ -51,8 +53,17 @@ def evaluate_model(path: Path, runs: int, model_client: Any) -> dict[str, Any]:
         "passed": passed,
         "total": total,
         "pass_rate": round(passed / total, 4) if total else 0.0,
+        **_reply_summary(rows),
         "cases": rows,
     }
+
+
+def _reply_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    replies = list(chain.from_iterable(row["replies"] for row in rows))
+    verdicts = Counter(dict.fromkeys(("PASS", "FAIL-CHECK", "FAIL-SAFE", "ERROR"), 0))
+    verdicts.update(reply["verdict"] for reply in replies)
+    seconds = [reply["seconds"] for reply in replies] or [0.0]
+    return {"verdicts": dict(verdicts), "median_seconds": float(statistics.median(seconds))}
 
 
 def _normalize(text: str) -> str:
@@ -134,12 +145,22 @@ def _case_row(case: dict[str, Any], runs: int, model_client: Any) -> dict[str, A
 
 
 def _reply(case: dict[str, Any], model_client: Any) -> dict[str, Any]:
+    started = time.monotonic()
     try:
         turn = run_turn(case["question"], sender=SENDER, model_client=model_client)
     except Exception as error:
-        return {"verdict": "ERROR", "model_requests": None, "text": type(error).__name__}
+        seconds = round(time.monotonic() - started, 2)
+        return {
+            "verdict": "ERROR",
+            "seconds": seconds,
+            "operations": [],
+            "model_requests": None,
+            "text": type(error).__name__,
+        }
     return {
         "verdict": verdict(case, turn["text"]),
+        "seconds": round(time.monotonic() - started, 2),
+        "operations": turn.get("operations", []),
         "model_requests": turn["model_requests"],
         "text": turn["text"],
     }
