@@ -6,13 +6,13 @@ from typing import Any
 from django.db.utils import DatabaseError
 
 from emporio.agent_claims import plain_text
+from emporio.agent_feedback import rejection_feedback
 from emporio.agent_output import output_supported, rejection_trace
 from emporio.agent_protocol import (
     FAILURE_TEXT,
     HANDOFF_TEXT,
     MORE_RESULTS_TEXT,
     OUT_OF_SCOPE_TEXT,
-    REJECTED_TEXT,
     SYSTEM_PROMPT,
     result,
     terminal,
@@ -108,10 +108,12 @@ def _terminal_result(content, messages, state, version):
             answer["text"], answer["outcome"], state["sources"], state["evidence"]
         )
     ):
-        state["operations"].append(rejection_trace(answer, state["sources"], state["evidence"]))
+        trace = rejection_trace(answer, state["sources"], state["evidence"])
+        state["operations"].append(trace)
         reply = content if isinstance(content, str) else ""
+        feedback = rejection_feedback(trace["check"], answer, state["evidence"])
         messages.extend(
-            [{"role": "assistant", "content": reply}, {"role": "user", "content": REJECTED_TEXT}]
+            [{"role": "assistant", "content": reply}, {"role": "user", "content": feedback}]
         )
         return True, None
     text = {"handoff": HANDOFF_TEXT, "out_of_scope": OUT_OF_SCOPE_TEXT}.get(
