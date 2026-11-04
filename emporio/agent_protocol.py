@@ -16,6 +16,7 @@ REJECTED_TEXT = (
     "use outcome=out_of_scope."
 )
 HANDOFF_TEXT = "Encaminhei sua conversa para atendimento humano."
+MORE_RESULTS_TEXT = "Há mais opções além destas; posso mostrar as próximas."
 OUT_OF_SCOPE_TEXT = (
     "Esse assunto foge do que o Empório da Música atende: trabalhamos exclusivamente com "
     "instrumentos musicais. Posso ajudar com algum produto, preço ou política da loja?"

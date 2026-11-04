@@ -5,10 +5,12 @@ from typing import Any
 
 from django.db.utils import DatabaseError
 
+from emporio.agent_claims import plain_text
 from emporio.agent_output import output_supported
 from emporio.agent_protocol import (
     FAILURE_TEXT,
     HANDOFF_TEXT,
+    MORE_RESULTS_TEXT,
     OUT_OF_SCOPE_TEXT,
     REJECTED_TEXT,
     SYSTEM_PROMPT,
@@ -113,7 +115,24 @@ def _terminal_result(content, messages, state, version):
     text = {"handoff": HANDOFF_TEXT, "out_of_scope": OUT_OF_SCOPE_TEXT}.get(
         answer["outcome"], answer["text"]
     )
+    text = _with_more_notice(answer["outcome"], text, state["evidence"])
     return False, _envelope(answer, text, state, version)
+
+
+def _with_more_notice(outcome, text, evidence):
+    if outcome == "answer" and not _mentions_more(text) and any(map(_catalog_has_more, evidence)):
+        return text + "\n\n" + MORE_RESULTS_TEXT
+    return text
+
+
+def _mentions_more(text):
+    plain = plain_text(text)
+    return any(term in plain for term in ("mais opcoes", "outras opcoes", "mais resultados"))
+
+
+def _catalog_has_more(item):
+    sources = item.get("sources", []) if isinstance(item, dict) else []
+    return bool(item.get("has_more")) and any(s.get("type") == "catalog" for s in sources)
 
 
 def _request(model_client, messages, state):
