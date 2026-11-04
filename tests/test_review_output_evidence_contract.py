@@ -134,3 +134,17 @@ def test_scope_redirect_does_not_need_catalog_evidence(text):
 
 def test_scope_redirect_guard_still_requires_evidence_for_catalog_facts():
     assert not output_supported("O Yamaha custa R$ 2.999 e está disponível.", "answer", [], [])
+
+@pytest.mark.parametrize("text, outcome, sources, evidence", [
+    ("A garantia é de 7 dias.", "answer", POLICY, [{"outcome": "found", "data": [{"text": "Devolução em até 7 dias corridos."}]}]),
+    ("O frete de devolução não é pago pela loja.", "answer", POLICY, RETURNS),
+    ("Você prefere o Takamine GD20 — R$ 1,00?", "clarification", [], []),
+    ("Você prefere garantia vitalícia ou troca grátis?", "clarification", [], []),
+])
+def test_unsupported_output_claims_are_rejected(text, outcome, sources, evidence):
+    assert not output_supported(text, outcome, sources, evidence)
+
+
+def test_warranty_days_supported_by_warranty_evidence_are_allowed():
+    evidence = [{"outcome": "found", "data": [{"text": "Garantia legal de 90 dias para produtos duráveis."}]}]
+    assert output_supported("A garantia é de 90 dias.", "answer", POLICY, evidence)

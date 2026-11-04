@@ -3,7 +3,12 @@
 import re
 from typing import Any
 
-from emporio.agent_claims import contacts_grounded, plain_text, specific_claims_supported
+from emporio.agent_claims import (
+    POLICY_WORDS,
+    contacts_grounded,
+    plain_text,
+    specific_claims_supported,
+)
 from emporio.agent_numbers import numbers_supported
 
 
@@ -60,6 +65,8 @@ def _safe_clarification(text: str) -> bool:
         and re.search(r"[.!]\s", text) is None
         and _is_preference_question(plain)
         and not _has_store_claim(plain)
+        and "r$" not in plain
+        and not any(word in plain for word in POLICY_WORDS)
     )
 
 
@@ -123,5 +130,5 @@ def _catalog_supported(text: str, kinds: set[str]) -> bool:
 
 
 def _policy_supported(text: str, kinds: set[str]) -> bool:
-    words = ("devolu", "reembolso", "horario", "garantia", "frete", "pix")
+    words = POLICY_WORDS
     return not any(word in text for word in words) or "policy" in kinds

@@ -6,6 +6,8 @@ from typing import Any
 
 from emporio.agent_numbers import numbers_supported
 
+POLICY_WORDS = ("devolu", "reembolso", "horario", "garantia", "frete", "pix", "troca")
+
 
 def specific_claims_supported(text: str, kinds: set[str], evidence: list[Any]) -> bool:
     """Validate claims whose meaning depends on the source record itself."""
@@ -13,6 +15,7 @@ def specific_claims_supported(text: str, kinds: set[str], evidence: list[Any]) -
         _address_grounded(text, evidence)
         and _product_price_bound(text, kinds, evidence)
         and (_shipping_polarity_grounded(text, evidence))
+        and _topic_numbers_grounded(text, evidence)
     )
 
 
@@ -148,16 +151,26 @@ def _shipping_polarity_grounded(text: str, evidence: list[Any]) -> bool:
     )
 
 
+def _topic_numbers_grounded(text: str, evidence: list[Any]) -> bool:
+    rows = [row for item in evidence if isinstance(item, dict) for row in item.get("data", [item])]
+    return all(
+        numbers_supported(sentence, [r for r in rows if term in plain_text(_evidence_text(r))])
+        for sentence in re.split(r"[!?;]|\.(?!\d)", re.sub(r"r\$\s*[\d.,]+", "", text))
+        for term in POLICY_WORDS
+        if term in sentence
+    )
+
+
+SHIPPING_PARTIES = {
+    "cliente": "por conta do cliente|cliente paga (?:o )?frete|pago pelo cliente",
+    "loja": "por conta da loja|loja paga (?:o )?frete|pag[oa] pela loja",
+}
+
+
 def _shipping_party(text: str) -> str | None:
-    if any(
-        phrase in text
-        for phrase in ("por conta do cliente", "cliente paga o frete", "cliente paga frete")
-    ):
-        return "cliente"
-    if any(
-        phrase in text for phrase in ("por conta da loja", "loja paga o frete", "loja paga frete")
-    ):
-        return "loja"
+    for party, pattern in SHIPPING_PARTIES.items():
+        if match := re.search(rf"(\bnao\s+(?:e\s+|sera\s+|fica\s+)?)?(?:{pattern})", text):
+            return ("loja" if party == "cliente" else "cliente") if match[1] else party
     return None
 
 
