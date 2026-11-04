@@ -53,13 +53,12 @@ def evaluate_model(path: Path, runs: int, model_client: Any) -> dict[str, Any]:
         "passed": passed,
         "total": total,
         "pass_rate": round(passed / total, 4) if total else 0.0,
-        **_reply_summary(rows),
+        **_reply_summary(list(chain.from_iterable(row["replies"] for row in rows))),
         "cases": rows,
     }
 
 
-def _reply_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    replies = list(chain.from_iterable(row["replies"] for row in rows))
+def _reply_summary(replies: list[dict[str, Any]]) -> dict[str, Any]:
     verdicts = Counter(dict.fromkeys(("PASS", "FAIL-CHECK", "FAIL-SAFE", "ERROR"), 0))
     verdicts.update(reply["verdict"] for reply in replies)
     seconds = [reply["seconds"] for reply in replies] or [0.0]
