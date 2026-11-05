@@ -1,12 +1,12 @@
 # Empório da Música — AI Customer Service Agent
 
-Python customer-service prototype for the fictional Empório da Música in Campo Grande/MS, built for the [Artefact AI Engineer challenge](desafio_tecnico_ai_eng_artefact.pdf).
+Empório da Música is a Python and Django customer-service agent for a fictional music store in Campo Grande, Brazil. It answers customer questions using catalog, order, and store-policy tools.
 
-**Status:** the local application and deterministic integration tests work. With the default Cloudflare model, GLM-4.7 Flash, five single-turn development questions passed 13 of 15 live runs through the full agent and output checks; Gemma 4 passed 11 of 15; every miss but one was a fixed safe reply, and no passing reply stated a wrong fact. These questions were used during development, so they are regression evidence, not an independent evaluation. [Five live two-turn conversations](docs/interactions.md), recorded verbatim with a local `qwen3.5:9b` model, produced grounded answers in 9 of 10 turns; their checks against the source data also list what the agent got wrong or omitted. See [validation](docs/validation.md).
+**Status:** The application runs locally, with automated checks covering data access, authorization, and message processing. Model answer quality remains under evaluation; see the recorded results and limitations below.
 
 ## Running the project
 
-No programming experience is needed. You will type a few commands into a terminal: **Terminal** on macOS or Linux, **PowerShell** on Windows (press the Windows key, type `PowerShell`, press Enter). Copy each command, paste it, and press Enter.
+No programming experience is needed. Use Terminal on macOS or Linux, or PowerShell on Windows. Copy each command, paste it, and press Enter.
 
 ### 1. Install uv (one time)
 
@@ -19,16 +19,23 @@ Close the terminal and open a new one so the `uv` command is found.
 
 ### 2. Download the project
 
-On the [GitHub page](https://github.com/LzHFerreira/emporio-musica-ai-agent), click **Code → Download ZIP**, unzip it, then open a terminal in the unzipped folder. (With Git installed: `git clone https://github.com/LzHFerreira/emporio-musica-ai-agent.git` and `cd emporio-musica-ai-agent`.)
+On the [GitHub page](https://github.com/LzHFerreira/emporio-musica-ai-agent), click **Code → Download ZIP**, extract it, and open a terminal in the extracted folder.
+
+Alternatively, with Git installed:
+
+```bash
+git clone https://github.com/LzHFerreira/emporio-musica-ai-agent.git
+cd emporio-musica-ai-agent
+```
 
 ### 3. Set up the store data (one time)
 
-Create your settings file:
+Copy the example settings file to create `.env`:
 
 - **macOS or Linux:** `cp .env.example .env`
 - **Windows (PowerShell):** `Copy-Item .env.example .env`
 
-Then run these three commands. The first may take a minute while it downloads Python and the libraries:
+Then run these commands to install the dependencies, create the database, and load the store data:
 
 ```bash
 uv sync --locked
@@ -36,7 +43,7 @@ uv run --env-file .env python manage.py migrate
 uv run --env-file .env python manage.py load_sources --source-dir data
 ```
 
-The last command checks the six spreadsheets and the store policy PDF in `data/` and loads them into a local database.
+The last command validates the six supplied CSV files and store policy PDF, then loads them into a local database.
 
 ### 4. Try the demo (no account needed)
 
@@ -152,17 +159,21 @@ The supplied datasets are treated as synthetic fixtures because the challenge de
 
 ### Reasoning about incomplete or apparently conflicting sources
 
-The [challenge, p. 3](desafio_tecnico_ai_eng_artefact.pdf#page=3), asks for reasonable interpretations, documented assumptions and continued progress when information is incomplete. My approach is to check each rule's scope and the supplied data, record a justified decision, and seek clarification only when the remaining gap affects the answer.
+The [challenge, p. 3](desafio_tecnico_ai_eng_artefact.pdf#page=3), asks for reasonable interpretations when information is incomplete. I checked each rule against the [store policy](data/políticas_da_loja.pdf) and supplied records, then chose an explicit reading so I could proceed.
 
-| Case | Reasoning and project decision |
-| --- | --- |
-| Installments | [§3.1, p. 3](data/políticas_da_loja.pdf#page=3) expands §3's summary: apply its tiers rather than a universal R$100 minimum. The below-R$50 exception does not affect current 1–3 installment scenarios: the cheapest product, including active promotions, and the smallest order are R$159.90, or 3 × R$53.30. |
-| Historical payment terms | Orders 9, 16 and 18 fall below §3.1's tier minimums. Preserve these canonical historical records and report administrative warnings when structural validation passes. Their recorded terms do not justify equivalent new installment offers. |
-| Exchanges and warranty | [§4.2, p. 4](data/políticas_da_loja.pdf#page=4) allows defect exchanges within 30 days of purchase; [§8.1, p. 7](data/políticas_da_loja.pdf#page=7) describes a 90-day warranty from receipt. Different remedies and start dates do not establish a contradiction. Explain the stated post-exchange route—manufacturer contact, with store mediation on request—and clarify unspecified mediation details only when needed. |
-| Contact numbers | Use [§7, p. 6](data/políticas_da_loja.pdf#page=6)'s (67) 3321-4500 as primary WhatsApp support, with failed customer matching routed to a human within the conversation. Retain [§1.2, p. 2](data/políticas_da_loja.pdf#page=2)'s (67) 3341-4444 as the listed company telephone/WhatsApp contact. Their stated roles support this mapping without treating either number as invalid. |
-| Metropolitan delivery | [§5.1, p. 4](data/políticas_da_loja.pdf#page=4) specifies R$35 below R$500 and free delivery above it. Equality is omitted, not contradicted. No recorded order or combination of supplied product prices reaches exactly R$500, including active promotions and permitted PIX discounts, so this gap does not block current scenarios. In a real-world scenario, to avoid confusion with customer and staff, I would argue with the store that the equality should be included and treat the case as free delivery. |
+For installments, I treated [§3.1, p. 3](data/políticas_da_loja.pdf#page=3) as a detailed expansion of §3's summary, applying its tiers rather than a universal R$100 minimum. I checked the below-R$50 exception: product 119 is the lowest-priced, and order 7 the smallest; both are R$159.90, or R$53.30 in three installments. The exception does not change current one-to-three-installment cases.
 
-These are project interpretations of supplied sources, not legal conclusions or claims of live business validation. Recheck the data-dependent conclusions when canonical data or discount rules change. [Requirements and acceptance coverage](docs/requirements.md#data-and-policy-findings) define the resulting behavior. Installment and PIX pricing are implemented and covered by automated tests, and live-model runs now provide regression evidence (see [validation](docs/validation.md)); behavioral validation of the remaining interpretations stays partial.
+Orders 9, 16 and 18 have recorded terms below those tiers. I kept them as historical transactions; those terms do not establish what the store should offer for a new purchase.
+
+I treated exchange and warranty as different protections, not a conflict: [§4.2, p. 4](data/políticas_da_loja.pdf#page=4) allows defect exchanges within 30 days of purchase; [§8.1, p. 7](data/políticas_da_loja.pdf#page=7) starts a 90-day warranty on receipt. After the exchange period, the policy points to the manufacturer, with store mediation on request; it gives no further mediation details.
+
+I kept both numbers in their stated roles: [§7, p. 6](data/políticas_da_loja.pdf#page=6) names (67) 3321-4500 for primary WhatsApp support; [§1.2, p. 2](data/políticas_da_loja.pdf#page=2) lists (67) 3341-4444 as company phone/WhatsApp. I did not declare either number wrong.
+
+I kept calculations and access decisions in the application: budget filtering uses the supported payable price; promotions do not stack with PIX; product status stays separate from stock quantity; and application context, not model input, establishes sender identity and order ownership. This ties prices to the actual offer and access to the sender established by the application.
+
+I would argue with the store that orders of exactly R$500 should qualify for free delivery, giving customers and staff a clear rule and avoiding confusion.
+
+For the resulting contracts and validation evidence, see [requirements and acceptance coverage](docs/requirements.md#data-and-policy-findings) and [validation](docs/validation.md).
 
 ## Testing and evaluation
 
@@ -204,21 +215,19 @@ This also checks formatting, lint, types, docstrings, dependency boundaries, com
 
 Live Meta remains outside challenge acceptance. Additional provider or infrastructure work should follow evidence from the core customer-agent gates, not replace them.
 
+## Development context
+
+I built most of this project during the Dia de Finados holiday (2 November), while my two daughters were home until school resumed on 4 November. I worked in short, interrupted sessions and did not commit as I went. The result was `8b0090e` (3 November): 21,116 changed lines across 246 files in one commit, which is hard to review. That was a process failure on my part, not a design choice.
+
+On 4 November, I moved to smaller, test-first changes and reviewed them individually. The remaining gaps stay visible in [Known limitations](#known-limitations).
+
 ## AI-assisted development
 
-I used OpenAI Codex throughout requirements analysis, implementation, test generation, documentation and adversarial review. I directed the work by defining customer scenarios, setting acceptance criteria, comparing alternatives and deciding which changes to retain. I own the architecture, scope and submitted result, including the limitations documented here.
+I used Codex throughout requirements analysis, implementation, tests, documentation and review. I set customer scenarios and acceptance criteria, checked recommendations against the supplied sources and executable behavior, and decided which changes to keep. I reviewed and approved the work; I remain responsible for the submitted result and its limitations.
 
-My decisions included evaluating recommendations against payable prices, keeping PIX discounts from stacking with promotions, distinguishing product status from stock quantity, and enforcing customer identity and order ownership outside the model. I challenged apparent policy contradictions against the original passages and supplied records before accepting an interpretation. These decisions shaped the application contracts and regression cases.
+During the final model-quality phase, I used Claude Code with Claude Opus 5.5 coordinating and reviewing, and Claude Haiku 5.5 subagents handling tests, implementation, investigations and live validation. GPT-6 Luna was unavailable in that environment. For that phase, I required separate test and implementation agents: one established a focused failure, another made the change, and the coordinator reviewed the diff and checks before I approved it.
 
-For executable changes, I required separate test and implementation agents: establish a failing focused test, implement the change, then verify the result. I requested independent reviews to expose weak assumptions and checked findings against source evidence and executable behavior. I treat generated proposals as material to evaluate, and report automated checks, scripted demonstrations and actual model results separately. [Validation](docs/validation.md) records the evidence and remaining gaps; I remain accountable for the submission's correctness.
-
-The final model-quality phase used Claude Code with Claude Opus 5.5 as planner, coordinator and reviewer, and Claude Haiku 5.5 subagents at low reasoning effort for implementation, tests, investigations and live validation runs. GPT-6 Luna, the delegation model named first in my agent instructions, was not available in that environment. Each change followed the same sequence: a test agent wrote a focused test and confirmed it failed for the stated reason; a separate implementation agent made the smallest change; the coordinator reviewed the diff, reran the relevant checks and reported the results before I approved each commit. Batches were limited to 50 changed lines unless I approved more, as I did for the evaluator command. These commits carry a `Co-Authored-By: Claude Opus 5.5` trailer.
-
-That phase started from the open gate that no configured model had completed a customer workflow. Live runs showed that most failures came from the harness rather than the models: strict terminal JSON parsing, an integer budget rejected by the tool schema, the customer's own budget treated as an unsupported number, list markers and multi-line lists breaking price-to-product binding, and discarded handoff text still being checked. The resulting changes extract the last terminal JSON object, retry rejected replies with corrective feedback, reject repetition loops, cut-off replies, leaked control tokens and English leaks, add a fixed out-of-scope reply, retry invalid Gemma terminal replies instead of failing, make GLM-4.7 Flash the default and add the reproducible `evaluate_model` command.
-
-A later review found that the newly added manual tool returned internal sections and no provenance, that grounding accepted unsupported warranty and negated shipping claims, that ordinary phrasings missed retrieval, and that the evaluator matched `9h` inside `19h`; each was fixed test-first. Recording live conversations on a local Ollama model then exposed three hidden 60-second limits, a rejected correct address answer and a format retry that exhausted the turn budget, which were also fixed before the conversations were recorded.
-
-Review caught several agent errors before they were accepted: a proposed newline split that would have accepted swapped product prices, tests that passed for the wrong reason because they omitted catalog or policy sources, validation ground truth that left out parts of the policy PDF and misclassified correct answers, and a Radon complexity regression introduced by earlier commits. The five live evaluation questions were written and inspected during this work, so the reported pass rates (GLM-4.7 Flash 13/15, Gemma 4 11/15) are regression evidence. Five multi-turn conversations have since been recorded live; independent paraphrases remain open.
+Those reviews caught concrete mistakes before acceptance: a proposed newline split would have allowed swapped product prices; tests passed for the wrong reason when they omitted catalog or policy sources; validation ground truth missed parts of the policy; and an earlier change caused a Radon complexity regression. I checked those findings against the sources and executable behavior before approving the changes.
 
 ## Architecture decisions
 
