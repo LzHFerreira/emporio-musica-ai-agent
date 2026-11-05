@@ -112,8 +112,11 @@ class AgentTurnContractTests(TestCase):
             with self.subTest(text=text):
                 replies = iter([{"tool_calls": [search]}] + [{"content": json.dumps({"outcome": "answer", "text": text, "reason": None})}] * 3)
                 result = run_turn("Violão de nylon até mil no pix?", sender="5567998123456", model_client=lambda m, t: next(replies))
-                # Prose prices after a catalog search are rejected under M4; prices must come via facts.
-                self.assertNotIn("R$ 408,41", result["text"])
+                # The model's prose list is never delivered; any fallback lines come from catalog evidence.
+                self.assertNotIn(text, result["text"])
+                if result["text"].startswith("Encontrei estas informações no catálogo:"):
+                    self.assertIn("Tagima Memphis AC-39 Nylon Natural", result["text"])
+                    self.assertFalse(any("Rozini" in l and "R$ 408,41" in l for l in result["text"].splitlines()))
 
     def test_out_of_scope_reply_uses_fixed_portuguese_text(self):
         from emporio.agent_protocol import OUT_OF_SCOPE_TEXT

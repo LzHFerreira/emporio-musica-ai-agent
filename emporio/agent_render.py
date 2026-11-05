@@ -3,7 +3,7 @@
 import re
 from decimal import Decimal, InvalidOperation
 
-from emporio.agent_claims import plain_text
+from emporio.agent_claims import _named_products, plain_text
 
 UNRENDERED_CLAIM = re.compile(r"r\$\s*\d|\b\d+,\d{2}\b|estoque|disponi|esgotad")
 UNRENDERED_ORDER = re.compile(
@@ -66,6 +66,18 @@ def evidence_rows(evidence: list[dict]) -> dict[str, dict]:
     """Map each fact ref in the evidence to its row."""
     refs = [r for i in evidence for r in i.get("data", []) if isinstance(r, dict) and "ref" in r]
     return {r["ref"]: r for r in refs}
+
+
+def evidence_answer(state: dict) -> str | None:
+    """Answer with catalog lines for the products the last rejected facts_claim draft named."""
+    rejections = [op for op in state["operations"] if op.get("tool") == "output_check"]
+    if not rejections or rejections[-1].get("check") != "facts_claim":
+        return None
+    rows = [r for r in evidence_rows(state["evidence"]).values() if r["ref"].startswith("catalog-")]
+    named = _named_products(plain_text(state.get("draft", "")), rows)
+    if not named:
+        return None
+    return "\n".join(["Encontrei estas informações no catálogo:", *map(_line, named)])
 
 
 def with_facts(answer: dict | None, evidence: list[dict]) -> dict | None:

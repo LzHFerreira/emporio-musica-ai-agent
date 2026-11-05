@@ -17,7 +17,7 @@ from emporio.agent_protocol import (
     result,
     terminal,
 )
-from emporio.agent_render import with_facts
+from emporio.agent_render import evidence_answer, with_facts
 from emporio.agent_schemas import TOOL_SCHEMAS
 from emporio.agent_tools import ToolHandler, execute_calls
 from emporio.catalog.models import SourceSnapshot
@@ -110,7 +110,7 @@ def _terminal_result(content, messages, state, version):
     ):
         trace = rejection_trace(parsed, state["sources"], state["evidence"], state["user"])
         state["operations"].append(trace)
-        reply = content if isinstance(content, str) else ""
+        reply = state["draft"] = content if isinstance(content, str) else ""
         feedback = rejection_feedback(trace["check"], answer, state["evidence"])
         messages.extend(
             [{"role": "assistant", "content": reply}, {"role": "user", "content": feedback}]
@@ -166,7 +166,7 @@ def _envelope(answer, text, state, version):
 def _fallback(state, version):
     return result(
         "answer",
-        FAILURE_TEXT,
+        evidence_answer(state) or FAILURE_TEXT,
         None,
         state["sources"],
         state["operations"],
