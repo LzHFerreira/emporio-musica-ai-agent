@@ -6,6 +6,10 @@ from decimal import Decimal, InvalidOperation
 from emporio.agent_claims import plain_text
 
 UNRENDERED_CLAIM = re.compile(r"r\$\s*\d|\b\d+,\d{2}\b|estoque|disponi|esgotad")
+UNRENDERED_ORDER = re.compile(
+    r"enviad|entregue|a caminho|cancelad|processando|em processamento|despachad|postad"
+    r"|saiu para entrega|rastreio|previsao de entrega"
+)
 
 LABELS = {
     "available": "disponível em estoque",
@@ -52,6 +56,10 @@ def with_facts(answer: dict | None, evidence: list[dict]) -> dict | None:
     rows = {r["ref"]: r for r in refs}
     if UNRENDERED_CLAIM.search(plain_text(answer["text"])) and any(
         ref.startswith("catalog-") for ref in rows
+    ):
+        return None
+    if UNRENDERED_ORDER.search(plain_text(answer["text"])) and any(
+        ref.startswith("order-") for ref in rows
     ):
         return None
     if "facts" not in answer:

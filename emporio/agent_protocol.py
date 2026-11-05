@@ -55,7 +55,8 @@ SYSTEM_PROMPT = "\n".join(
         "clarification; handoff exige um dos quatro motivos válidos. "
         "Não inclua texto fora do JSON.",
         "Depois de search_catalog, cite nomes, preços, estoque e condições de pagamento somente "
-        'com refs em "facts": ["catalog-N"], nunca no texto; não escreva refs no texto.',
+        'com refs em "facts": ["catalog-N"], nunca no texto; não escreva refs no texto. '
+        'Status, rastreio e datas de entrega de pedidos vêm somente de refs "facts": ["order-N"].',
         "Use clarification para perguntar por preferências ou dados necessários, sem afirmar "
         "fatos da loja; por exemplo, pergunte o orçamento ou se a pessoa prefere violão "
         "de 6 ou 12 cordas.",
