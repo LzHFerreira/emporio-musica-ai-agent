@@ -24,5 +24,6 @@ def _numbers_hint(text: str, evidence: list[Any]) -> str:
     tokens = list(dict.fromkeys(m for m in NUMBER.findall(text) if _decimal(m) not in known))
     return (
         f"Estes números não aparecem nas fontes: {', '.join(tokens)}; "
-        "não repita números do cliente nem cite páginas ou seções."
+        'só repita números do cliente atribuindo-os a ele ("pelo que você informou") '
+        "e não cite páginas ou seções."
     )

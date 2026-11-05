@@ -24,7 +24,7 @@ class RejectionFeedbackContractTests(TestCase):
         self.assertEqual((result["outcome"], len(seen)), ("answer", 3))
         self.assertIn(REJECTED_TEXT, seen[2][-1]["content"])
         self.assertIn("Estes números não aparecem nas fontes: 4;", seen[2][-1]["content"])
-        self.assertIn("não repita números do cliente nem cite páginas ou seções", seen[2][-1]["content"])
+        self.assertIn('só repita números do cliente atribuindo-os a ele ("pelo que você informou") e não cite páginas ou seções', seen[2][-1]["content"])
 
     def test_policy_rejection_names_policy_tool(self):
         seen = []

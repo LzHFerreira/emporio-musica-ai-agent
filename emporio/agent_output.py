@@ -14,7 +14,7 @@ from emporio.agent_claims import (
     plain_text,
 )
 from emporio.agent_consistency import consistency_checks
-from emporio.agent_numbers import numbers_supported
+from emporio.agent_numbers import numbers_supported, scrub
 
 Check = tuple[str, Callable[[], bool]]
 
@@ -27,23 +27,23 @@ def output_supported(
 
 
 def first_failed_check(
-    text: str, outcome: str, sources: list[dict[str, Any]], evidence: list[Any]
+    text: str, outcome: str, sources: list[dict[str, Any]], evidence: list[Any], customer=""
 ) -> str | None:
     """Return the name of the first check that rejects the draft, or None."""
-    kinds = _source_types(sources)
-    for name, passes in _checks(text, outcome, kinds, evidence):
+    kinds, checked = _source_types(sources), scrub({"text": text}, customer)
+    for name, passes in _checks(checked, outcome, kinds, evidence):
         if not passes():
             return name
     return None
 
 
 def rejection_trace(
-    answer: dict[str, Any] | None, sources: list[dict[str, Any]], evidence: list[Any]
+    answer: dict[str, Any] | None, sources: list[dict[str, Any]], evidence: list[Any], customer=""
 ) -> dict[str, str]:
     """Return the operation record for a rejected draft; the draft text is not stored."""
     if answer is None:
         return {"tool": "output_check", "outcome": "rejected", "check": "invalid_terminal"}
-    check = first_failed_check(answer["text"], answer["outcome"], sources, evidence)
+    check = first_failed_check(answer["text"], answer["outcome"], sources, evidence, customer)
     return {"tool": "output_check", "outcome": "rejected", "check": check or "unknown"}
 
 

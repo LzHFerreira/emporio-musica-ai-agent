@@ -1,6 +1,7 @@
 """Normalize and compare numeric claims from public result data only."""
 
 import re
+import unicodedata
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -15,6 +16,16 @@ PRIVATE_KEYS = {
     "sku",
     "product_id",
 }
+
+
+ATTRIBUTION = re.compile(r"voce (?:informou|disse|mencionou)|segundo voce")
+SENTENCE = re.compile(r"[^.;!?\n]*[.;!?\n]?")
+
+
+def scrub(answer: dict[str, Any], customer: str) -> str:
+    """Drop customer numbers that a sentence attributes to that customer."""
+    numbers = _numbers(customer)
+    return SENTENCE.sub(lambda m: _unattributed(m.group(), numbers), answer["text"])
 
 
 def numbers_supported(text: str, evidence: list[Any]) -> bool:
@@ -102,3 +113,10 @@ def _normalize_comma(value: str) -> str:
 def _normalize_dot(value: str) -> str:
     head, tail = value.rsplit(".", 1)
     return head.replace(".", "") + tail if len(tail) == 3 else value
+
+
+def _unattributed(sentence: str, numbers: set[Decimal]) -> str:
+    folded = unicodedata.normalize("NFKD", sentence).encode("ascii", "ignore").decode().lower()
+    if not numbers or not ATTRIBUTION.search(folded):
+        return sentence
+    return NUMBER.sub(lambda m: "" if _decimal(m.group()) in numbers else m.group(), sentence)
