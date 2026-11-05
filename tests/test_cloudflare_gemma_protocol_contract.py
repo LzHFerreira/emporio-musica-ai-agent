@@ -144,21 +144,6 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         message = normalize_reply({"tool_calls": [_tool_call(json.dumps(arguments))]})
         self.assertEqual(terminal(message["content"])["facts"], ["catalog-1"])
 
-    def test_glm_keeps_four_business_tools_without_gemma_protocol(self):
-        body = {"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call('{"mode":"search"}', "search_catalog", "browse")]}, "finish_reason": "tool_calls"}]}
-        requests = []
-        model, http = _client_for(body, model="@cf/zai-org/glm-4.7-flash", capture=requests)
-        result = model([{"role": "system", "content": "trusted"}], copy.deepcopy(TOOL_SCHEMAS))
-        payload = requests[0]
-        self.assertEqual(len(payload["tools"]), 5)
-        catalog = next(tool["function"] for tool in payload["tools"] if tool["function"]["name"] == "search_catalog")
-        self.assertEqual(catalog["parameters"]["properties"]["query"]["default"], "")
-        self.assertNotIn("query", catalog["parameters"].get("required", []))
-        self.assertNotIn("tool_choice", payload)
-        self.assertNotIn("respond_to_customer", json.dumps(payload))
-        self.assertEqual(result["tool_calls"][0]["function"]["arguments"], '{"mode":"search"}')
-        http.close()
-
     def test_gemma_missing_catalog_query_is_rejected_before_handler(self):
         body = {"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call('{"mode":"search"}', "search_catalog", "catalog")]}, "finish_reason": "tool_calls"}]}
         model, http = _client_for(body)
@@ -215,4 +200,23 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         model, http = _client_for(body)
         result = run_turn("Vocês vendem pizza?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
         self.assertEqual((result["model_requests"], result["text"]), (3, FAILURE_TEXT))
+        http.close()
+
+    def test_glm_requests_typed_reply_control_with_required_choice(self):
+        body = {"choices": [{"message": {"role": "assistant", "content": "ok"}, "finish_reason": "stop"}]}
+        requests = []
+        model, http = _client_for(body, model="@cf/zai-org/glm-4.7-flash", capture=requests)
+        model([{"role": "system", "content": "trusted"}, {"role": "user", "content": "oi"}], copy.deepcopy(TOOL_SCHEMAS))
+        payload = requests[0]
+        self.assertIn("respond_to_customer", _tool_names(payload["tools"]))
+        self.assertEqual(payload["tool_choice"], "required")
+        http.close()
+
+    def test_glm_reply_call_with_facts_normalizes_to_terminal(self):
+        arguments = {"outcome": "answer", "text": "Encontrei:", "reason": None, "facts": ["catalog-1"]}
+        body = {"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call(json.dumps(arguments))]}, "finish_reason": "tool_calls"}]}
+        model, http = _client_for(body, model="@cf/zai-org/glm-4.7-flash")
+        message = model([{"role": "user", "content": "oi"}], copy.deepcopy(TOOL_SCHEMAS))
+        self.assertIsInstance(message.get("content"), str)
+        self.assertEqual(terminal(message["content"]), {"outcome": "answer", "text": "Encontrei:", "reason": None, "facts": ["catalog-1"]})
         http.close()

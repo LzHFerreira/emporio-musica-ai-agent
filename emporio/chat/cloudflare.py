@@ -41,15 +41,12 @@ class CloudflareClient:
 
 
 def _request(client, messages, tools):
-    is_gemma = client.model == "@cf/google/gemma-4-26b-a4b-it"
-    if is_gemma:
-        messages, tools = gemma_request(messages, tools)
+    messages, tools = gemma_request(messages, tools)
     payload = _request_payload(client.model, messages, tools)
     body = _post(client, payload)
     message = _assistant(body)
-    if is_gemma:
-        validate_search_calls(message)
-        message = normalize_reply(message)
+    validate_search_calls(message)
+    message = normalize_reply(message)
     return message, _text(body.get("model"))
 
 
@@ -63,7 +60,7 @@ def _request_payload(model, messages, tools) -> dict[str, object]:
     }
     if model == "@cf/google/gemma-4-26b-a4b-it":
         payload["chat_template_kwargs"] = {"enable_thinking": False}
-        payload["tool_choice"] = "required"
+    payload["tool_choice"] = "required"
     _check_size(payload)
     return payload
 
