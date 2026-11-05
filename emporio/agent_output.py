@@ -15,6 +15,7 @@ from emporio.agent_claims import (
 )
 from emporio.agent_consistency import consistency_checks
 from emporio.agent_numbers import numbers_supported, scrub
+from emporio.agent_render import facts_failure
 
 Check = tuple[str, Callable[[], bool]]
 
@@ -43,7 +44,9 @@ def rejection_trace(
     """Return the operation record for a rejected draft; the draft text is not stored."""
     if answer is None:
         return {"tool": "output_check", "outcome": "rejected", "check": "invalid_terminal"}
-    check = first_failed_check(answer["text"], answer["outcome"], sources, evidence, customer)
+    check = facts_failure(answer, evidence) or first_failed_check(
+        answer["text"], answer["outcome"], sources, evidence, customer
+    )
     return {"tool": "output_check", "outcome": "rejected", "check": check or "unknown"}
 
 
