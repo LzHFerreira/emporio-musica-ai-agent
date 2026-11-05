@@ -1,6 +1,6 @@
 # Local validation record
 
-Updated: 2026-11-03. This records local evidence for the synthetic-data implementation. It is not full challenge acceptance, live-provider qualification or production certification. Requirements remain in [requirements](requirements.md); workflow contracts are in [interfaces](interfaces.md).
+Updated: 2026-11-03; marked historical on 2026-11-04. This records local evidence for the synthetic-data implementation. It is not full challenge acceptance, live-provider qualification or production certification. Requirements remain in [requirements](requirements.md); workflow contracts are in [interfaces](interfaces.md).
 
 ## Implemented and exercised
 
@@ -23,7 +23,9 @@ Historical OpenRouter requests received HTTP 429 before completion; an early loc
 
 ## Automated checks
 
-**Current revision (`33bb8b3`, 2026-11-04):** `scripts/run_quality_gates.sh` exited 0 with all 13 gates passing: 409 tests with 95.41% coverage, code-size/Radon on 204 Python files, Semgrep Pro (1,201 rules, 136 files, zero findings), and the type, lint, import, Django and migration checks. The earlier `1406898` code-size failure is resolved. The records below are historical.
+**Governing record:** the [README's current results](../README.md#current-results) govern the submitted revision. Everything in this file, including the next entry, is historical.
+
+**Earlier revision (`33bb8b3`, 2026-11-04, historical):** `scripts/run_quality_gates.sh` exited 0 with all 13 gates passing: 409 tests with 95.41% coverage, code-size/Radon on 204 Python files, Semgrep Pro (1,201 rules, 136 files, zero findings), and the type, lint, import, Django and migration checks. The earlier `1406898` code-size failure is resolved. The records below are historical.
 
 The final full suite on 2026-11-03 passed: **381 tests, 95.41% coverage** across 5,262 statements, with seven SQLite `ResourceWarning`s for unclosed database connections reported through Django internals. Loopback access was enabled for local transport tests. Provider responses in automated contracts are mocked; these results do not qualify generated answers or live Meta compatibility.
 
