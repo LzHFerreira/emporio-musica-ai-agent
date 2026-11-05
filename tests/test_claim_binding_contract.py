@@ -13,6 +13,9 @@ SWAPPED_DRAFT = ("O Yamaha C40 Nylon Natural está por R$ 699,90 e o Yamaha F310
 REVERSED_DRAFT = "Segunda a sexta das 18:00 às 09:00 e sábado das 09:00 às 13:00."
 DAY_UNITS_DRAFT = ("Você pode devolver online em até 7 dias úteis após o recebimento, desde que "
                    "o produto esteja na embalagem original.")
+ATTRIBUTED_DRAFT = ("Pelo que você informou, recebeu há 3 dias; compras online podem ser "
+                    "devolvidas em até 7 dias corridos após o recebimento, desde que o produto "
+                    "esteja sem sinais de uso e na embalagem original.")
 HOURS_DRAFT = "Segunda a sexta das 09:00 às 18:00 e sábado das 09:00 às 13:00."
 
 
@@ -34,6 +37,11 @@ class ClaimBindingContractTests(TestCase):
     def test_changed_return_day_units_are_not_delivered(self):
         result = self._run("Posso devolver uma compra feita pelo site?", [RETURNS], DAY_UNITS_DRAFT)
         self.assertNotEqual(result["text"], DAY_UNITS_DRAFT)
+
+    def test_attributed_customer_days_are_delivered(self):
+        result = self._run("Comprei pelo site e recebi há 3 dias, posso devolver?", [RETURNS],
+                           ATTRIBUTED_DRAFT)
+        self.assertEqual((result["outcome"], result["text"]), ("answer", ATTRIBUTED_DRAFT))
 
     def test_correct_store_hours_are_delivered(self):
         result = self._run("Qual o horário de funcionamento?", [HOURS], HOURS_DRAFT)
