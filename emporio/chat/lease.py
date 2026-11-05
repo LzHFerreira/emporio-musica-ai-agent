@@ -35,6 +35,13 @@ def owns() -> bool:
     ).exists()
 
 
+def release() -> None:
+    """Expire this process lease so the next generation can take the singleton."""
+    WorkerLease.objects.filter(key="default", generation=GENERATION).update(
+        expires_at=timezone.now()
+    )
+
+
 def heartbeat(stop: Event) -> None:
     """Renew the lease once a second while a provider or model call is active."""
     while not stop.wait(1):
