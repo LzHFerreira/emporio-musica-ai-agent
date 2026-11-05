@@ -65,7 +65,7 @@ def _request_payload(model, messages, tools) -> dict[str, object]:
     return payload
 
 
-def _post(client, payload: dict[str, object]) -> dict[str, Any]:
+def _post(client, payload: dict[str, object], retry: bool = True) -> dict[str, Any]:
     response = post_with_timeout(
         client.client,
         f"{client.base_url}/chat/completions",
@@ -73,8 +73,23 @@ def _post(client, payload: dict[str, object]) -> dict[str, Any]:
         payload=payload,
         timeout=client.request_timeout,
     )
+    if retry and _is_malformed_tool_call(response):
+        return _post(client, payload, retry=False)
     response.raise_for_status()
     return response.json()
+
+
+def _is_malformed_tool_call(response) -> bool:
+    if response.status_code != 400:
+        return False
+    try:
+        body = response.json()
+    except ValueError:
+        return False
+    errors = body.get("errors") if isinstance(body, dict) else None
+    if not isinstance(errors, list):
+        return False
+    return any(isinstance(error, dict) and error.get("code") == 3030 for error in errors)
 
 
 def _validate_config(account_id: str, api_key: str, model: str) -> None:

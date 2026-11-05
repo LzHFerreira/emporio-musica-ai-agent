@@ -11,7 +11,8 @@ _INSTRUCTION = (
     "with any business-tool call. Use an empty catalog query only for general browsing. If a "
     "specific product reference is missing or ambiguous, ask the customer to clarify rather "
     "than repeating an empty or ambiguous search. Put catalog refs in facts, never in the text. "
-    "Do not send final prose outside this function."
+    "Never write prices, stock or order status in text; list catalog-N or order-N refs in facts "
+    "and the application writes them. Do not send final prose outside this function."
 )
 _TOOL = {
     "type": "function",

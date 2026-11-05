@@ -220,3 +220,28 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         self.assertIsInstance(message.get("content"), str)
         self.assertEqual(terminal(message["content"]), {"outcome": "answer", "text": "Encontrei:", "reason": None, "facts": ["catalog-1"]})
         http.close()
+
+    def test_cloudflare_retries_once_after_3030_malformed_tool_call(self):
+        bad = httpx.Response(400, json={"errors": [{"code": 3030, "message": "Invalid JSON"}], "success": False})
+        responses, sent = iter([bad, httpx.Response(200, json={"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call(json.dumps({"outcome": "answer", "text": "Ok.", "reason": None}))]}, "finish_reason": "tool_calls"}]})]), []
+        http = httpx.Client(transport=httpx.MockTransport(lambda request: sent.append(request) or next(responses)))
+        model = CloudflareClient(account_id="acct", api_key="cf-key", model=GEMMA, client=http)
+        result = model([{"role": "user", "content": "oi"}], copy.deepcopy(TOOL_SCHEMAS))
+        self.assertEqual((result["content"], len(sent)), (json.dumps({"outcome": "answer", "text": "Ok.", "reason": None}), 2))
+        http.close()
+
+    def test_cloudflare_does_not_retry_other_400_codes(self):
+        sent = []
+        http = httpx.Client(transport=httpx.MockTransport(lambda request: sent.append(request) or httpx.Response(400, json={"errors": [{"code": 1000, "message": "Bad"}], "success": False})))
+        model = CloudflareClient(account_id="acct", api_key="cf-key", model=GEMMA, client=http)
+        with self.assertRaises(httpx.HTTPStatusError):
+            model([{"role": "user", "content": "oi"}], copy.deepcopy(TOOL_SCHEMAS))
+        self.assertEqual(len(sent), 1)
+        http.close()
+
+    def test_glm_instruction_keeps_prices_in_facts(self):
+        requests = []
+        model, http = _client_for({"choices": [{"message": {"role": "assistant", "content": "ok"}, "finish_reason": "stop"}]}, model="@cf/zai-org/glm-4.7-flash", capture=requests)
+        model([{"role": "user", "content": "oi"}], copy.deepcopy(TOOL_SCHEMAS))
+        self.assertIn("never write prices", " ".join(m["content"] for m in requests[0]["messages"] if m["role"] == "system").lower())
+        http.close()
