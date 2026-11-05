@@ -25,12 +25,12 @@ class OrderFactsContractTests(TestCase):
     def test_unknown_order_ref_rejects_draft(self):
         r, _ = run([final(["order-9"])] * 5)
         self.assertNotIn("order-9", r["text"])
-        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+        self.assertTrue(any(op.get("check") == "facts_unknown_ref" for op in r["operations"]))
     def test_status_claim_in_own_order_turn_rejects_draft(self):
         bad = {"content": j({"outcome": "answer", "text": "Seu pedido já foi enviado.", "reason": None})}
         r, _ = run([bad] * 5)
         self.assertNotIn("já foi enviado", r["text"])
-        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+        self.assertTrue(any(op.get("check") == "facts_claim" for op in r["operations"]))
     def test_neutral_text_with_order_fact_renders_status(self):
         ok = {"content": j({"outcome": "answer", "text": "Aqui está o seu pedido:", "reason": None, "facts": ["order-1"]})}
         r, _ = run([ok])

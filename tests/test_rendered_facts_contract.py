@@ -36,20 +36,20 @@ class RenderedFactsContractTests(TestCase):
     def test_unknown_ref_rejects_draft(self):
         r, _ = run([final(["catalog-9"])] * 5)
         self.assertNotIn("catalog-9", r["text"])
-        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+        self.assertTrue(any(op.get("check") == "facts_unknown_ref" for op in r["operations"]))
     def test_price_in_text_with_facts_rejects_draft(self):
         r, _ = run([final(["catalog-1"], "Está disponível por R$ 799,90, veja:")] * 5)
         self.assertNotIn("Está disponível por R$ 799,90", r["text"])
-        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+        self.assertTrue(any(op.get("check") == "facts_claim" for op in r["operations"]))
     def test_stock_claim_in_text_with_facts_rejects_draft(self):
         r, _ = run([final(["catalog-1"], "Temos em estoque:")] * 5)
         self.assertNotIn("Temos em estoque", r["text"])
-        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+        self.assertTrue(any(op.get("check") == "facts_claim" for op in r["operations"]))
     def test_case_variant_ref_never_reaches_customer(self):
         for text in ("Veja Catalog-1.", "Veja CATALOG-1."):
             r, _ = run([final(["catalog-1"], text)] * 5)
             self.assertNotIn("catalog-1", r["text"].lower())
-            self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+            self.assertTrue(any(op.get("check") == "facts_leaked_ref" for op in r["operations"]))
     def test_neutral_text_with_facts_renders_line(self):
         r, _ = run([final(["catalog-1"], "Encontrei este modelo:")])
         self.assertIn("Encontrei este modelo:", r["text"])
@@ -57,11 +57,11 @@ class RenderedFactsContractTests(TestCase):
     def test_stock_text_without_facts_is_rejected(self):
         r = plain_run({"query": "Giannini GF-3D"}, "O Giannini GF-3D está sem estoque no momento.")
         self.assertNotIn("O Giannini GF-3D está sem estoque no momento.", r["text"])
-        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+        self.assertTrue(any(op.get("check") == "facts_claim" for op in r["operations"]))
     def test_price_text_without_facts_is_rejected(self):
         r = plain_run({"query": "Yamaha C40"}, "O Yamaha C40 Nylon Natural custa R$ 599,90.")
         self.assertNotIn("O Yamaha C40 Nylon Natural custa R$ 599,90.", r["text"])
-        self.assertTrue(any(op.get("check") == "invalid_terminal" for op in r["operations"]))
+        self.assertTrue(any(op.get("check") == "facts_claim" for op in r["operations"]))
     def test_neutral_text_with_yamaha_facts_renders_line(self):
         args = {"query": "Yamaha C40", "payment_method": "pix"}
         r, _ = run([final(["catalog-1"], "Encontrei este modelo:")], args)

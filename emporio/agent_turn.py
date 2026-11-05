@@ -100,7 +100,7 @@ def _step(response, messages, sender, model_client, version, handlers, state):
 
 
 def _terminal_result(content, messages, state, version):
-    answer = with_facts(terminal(content), state["evidence"])
+    answer = with_facts(parsed := terminal(content), state["evidence"])
     if (
         answer is None
         or answer["outcome"] not in ("handoff", "out_of_scope")
@@ -108,7 +108,7 @@ def _terminal_result(content, messages, state, version):
             scrub(answer, state["user"]), answer["outcome"], state["sources"], state["evidence"]
         )
     ):
-        trace = rejection_trace(answer, state["sources"], state["evidence"], state["user"])
+        trace = rejection_trace(parsed, state["sources"], state["evidence"], state["user"])
         state["operations"].append(trace)
         reply = content if isinstance(content, str) else ""
         feedback = rejection_feedback(trace["check"], answer, state["evidence"])
