@@ -159,14 +159,14 @@ class CloudflareMalformedWireContractTests(SimpleTestCase):
         self.assertEqual(len(calls), 2)
         client.close()
 
-    def test_provider_429_is_not_retried_or_routed_to_another_provider(self):
+    def test_provider_429_is_retried_once_and_not_routed_to_another_provider(self):
         module = importlib.import_module("emporio.chat.cloudflare")
         seen = []
         client = httpx.Client(transport=httpx.MockTransport(lambda request: (seen.append(request), httpx.Response(429, json={"error": "limited"}))[1]))
         model = module.CloudflareClient(account_id="acct", api_key="cf-key", client=client)
         with self.assertRaises(httpx.HTTPStatusError):
             model([], [])
-        self.assertEqual((len(seen), seen[0].url.host), (1, "api.cloudflare.com"))
+        self.assertEqual((len(seen), seen[0].url.host), (2, "api.cloudflare.com"))
         client.close()
 
 class ForeignCredentialIsolationTests(SimpleTestCase):

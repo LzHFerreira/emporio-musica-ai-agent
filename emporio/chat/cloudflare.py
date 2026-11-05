@@ -73,10 +73,15 @@ def _post(client, payload: dict[str, object], retry: bool = True) -> dict[str, A
         payload=payload,
         timeout=client.request_timeout,
     )
-    if retry and _is_malformed_tool_call(response):
+    if retry and _is_retryable(response):
         return _post(client, payload, retry=False)
     response.raise_for_status()
     return response.json()
+
+
+def _is_retryable(response) -> bool:
+    status = response.status_code
+    return _is_malformed_tool_call(response) or status == 429 or status >= 500
 
 
 def _is_malformed_tool_call(response) -> bool:
