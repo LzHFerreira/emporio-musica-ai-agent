@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.management.base import CommandError
 
 from emporio.catalog.models import SourceSnapshot
+from emporio.chat import lease
 from emporio.chat.demo_http import MetaAcceptanceServer, signed_post, webhook_server
 from emporio.chat.meta import MetaClient
 from emporio.chat.models import IncomingMessage, OutgoingReply
@@ -34,6 +35,7 @@ def run_interaction(messages, model_client, stdout, sender=None):
                 stdout.write(reply.text)
         finally:
             sender_client.client.close()
+            lease.release()
 
 
 def _run_one(webhook, run_id, sender, index, text, model_client, sender_client):
