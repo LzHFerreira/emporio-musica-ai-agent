@@ -7,7 +7,7 @@ from django.db.utils import DatabaseError
 
 from emporio.agent_claims import plain_text
 from emporio.agent_feedback import rejection_feedback
-from emporio.agent_output import output_supported, rejection_trace
+from emporio.agent_output import output_supported, rejection_trace, scrub
 from emporio.agent_protocol import (
     FAILURE_TEXT,
     HANDOFF_TEXT,
@@ -38,7 +38,7 @@ def run_turn(
     """Execute no more than three model requests using one pinned source version."""
     version = _turn_version(snapshot_version)
     safe_text = minimize_text(text)
-    state = _new_state()
+    state = {**_new_state(), "user": safe_text}
     if not _valid_turn(safe_text, snapshot_version):
         return _fallback(state, version or "")
     messages = _initial_messages(safe_text, history)
@@ -105,10 +105,10 @@ def _terminal_result(content, messages, state, version):
         answer is None
         or answer["outcome"] not in ("handoff", "out_of_scope")
         and not output_supported(
-            answer["text"], answer["outcome"], state["sources"], state["evidence"]
+            scrub(answer, state["user"]), answer["outcome"], state["sources"], state["evidence"]
         )
     ):
-        trace = rejection_trace(answer, state["sources"], state["evidence"])
+        trace = rejection_trace(answer, state["sources"], state["evidence"], state["user"])
         state["operations"].append(trace)
         reply = content if isinstance(content, str) else ""
         feedback = rejection_feedback(trace["check"], answer, state["evidence"])

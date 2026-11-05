@@ -19,8 +19,9 @@ def test_system_prompt_does_not_promise_full_manual():
     assert "manual completo" not in SYSTEM_PROMPT
 
 
-def test_system_prompt_forbids_repeating_customer_numbers():
-    assert "Não repita números ditos pelo cliente" in SYSTEM_PROMPT
+def test_system_prompt_requires_attribution_for_customer_numbers():
+    assert "pelo que você informou" in SYSTEM_PROMPT
+    assert "Não repita números ditos pelo cliente" not in SYSTEM_PROMPT
 
 
 def test_system_prompt_asks_before_confirming():
