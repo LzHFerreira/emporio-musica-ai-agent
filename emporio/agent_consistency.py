@@ -15,6 +15,10 @@ GROUNDED_PHRASES = (
     "sem parcela minima",
     "bem avaliad",
     "mais vendid",
+    "gratis",
+    "brinde",
+    "vem com",
+    "inclui",
 )
 CLOSED_DAY = re.compile(r"domingo|feriado")
 OPENING = re.compile(r"\b(?:abr\w*|aberto|aberta|funcion\w*)\b")
@@ -22,6 +26,7 @@ HOURS_RANGE = re.compile(r"\b(?:das?|de) (\d{1,2}(?::\d{2})?) (?:as|a) (\d{1,2}(
 PIX_STACKING = re.compile(
     r"\b(?:mais|adicional|alem|acumul|cumulativ|soma|sobre (?:esse|este|o) (?:valor|preco))"
 )
+NEGATED_CLOSED = re.compile(r"nao\W+(?:\w+\W+){0,3}fechad")
 ENTITLEMENT = re.compile(r"\bpode(?:ra)?\s+(?:sim\s+)?(?:devolver|solicitar a devolucao)")
 
 
@@ -68,7 +73,8 @@ def _grounded_phrases_present(plain: str, found: str) -> bool:
 
 def _closed_days_respected(plain: str, found: str) -> bool:
     return "fechado" not in found or not any(
-        CLOSED_DAY.search(s) and OPENING.search(s) and not re.search(r"nao|fechad", s)
+        CLOSED_DAY.search(s)
+        and (NEGATED_CLOSED.search(s) or (OPENING.search(s) and not re.search(r"nao|fechad", s)))
         for s in re.split(r"[.!?;\n]", plain)
     )
 
