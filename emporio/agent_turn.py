@@ -35,7 +35,7 @@ def run_turn(
     handlers: dict[str, ToolHandler],
     history: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
-    """Execute no more than three model requests using one pinned source version."""
+    """Execute no more than four model requests using one pinned source version."""
     version = _turn_version(snapshot_version)
     safe_text = minimize_text(text)
     state = {**_new_state(), "user": safe_text}
@@ -66,7 +66,7 @@ def _valid_turn(text, version):
 
 
 def _loop(messages, sender, model_client, version, handlers, state):
-    for _ in range(3):
+    for _ in range(4):
         response = _request(model_client, messages, state)
         if response is None:
             break

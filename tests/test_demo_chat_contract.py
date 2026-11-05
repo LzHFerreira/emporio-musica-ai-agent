@@ -34,7 +34,7 @@ class DemoChatCommandContractTests(TransactionTestCase):
     def assert_row_is_bounded_and_delivered(self, row):
         self.assertEqual(row["reply_state"], "delivered")
         self.assertTrue(row["snapshot_version"])
-        self.assertLessEqual(row["model_requests"], 3)
+        self.assertLessEqual(row["model_requests"], 4)
         self.assertLessEqual(row["tool_executions"], 4)
 
     def assert_source_routing(self, rows):

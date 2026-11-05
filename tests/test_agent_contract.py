@@ -63,7 +63,7 @@ class AgentTurnContractTests(TestCase):
         responses = iter([{"tool_calls": calls}])
         result = run_turn("Qual é o horário?", sender="5567998123456", model_client=lambda m, t: next(responses))
         self.assertLessEqual(result["tool_executions"], 4)
-        self.assertLessEqual(result["model_requests"], 3)
+        self.assertLessEqual(result["model_requests"], 4)
         self.assertEqual(result["text"], "Não consegui concluir sua consulta agora. Você pode tentar novamente ou pedir atendimento humano.")
 
     def test_handoff_discards_model_text_and_uses_fixed_confirmation(self):

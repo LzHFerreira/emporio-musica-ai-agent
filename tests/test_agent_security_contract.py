@@ -77,7 +77,7 @@ class AgentSecurityContractTests(TestCase):
         model = Mock(side_effect=[request, request, request])
         with patch("emporio.agent.lookup_public_policy", return_value={"outcome": "not_found", "sources": [], "data": []}):
             result = run_turn("Qual horário?", sender="5567998123456", model_client=model)
-        self.assertEqual((model.call_count, result["model_requests"], result["tool_executions"]), (3, 3, 3))
+        self.assertEqual((model.call_count, result["model_requests"], result["tool_executions"]), (4, 4, 3))
         self.assertEqual(result["text"], FAILURE_TEXT)
 
     def test_tool_exception_is_bounded_and_invalid_snapshot_skips_model(self):
