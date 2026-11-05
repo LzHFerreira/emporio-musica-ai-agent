@@ -121,7 +121,7 @@ To exercise the application without a model service:
 uv run --env-file .env python manage.py demo_chat
 ```
 
-This scripted demo exercises actual source lookups, pricing, worker processing and simulated delivery. Its report identifies `model_mode: "scripted"`. The [live evidence](docs/evidence/conversations.html) is live model output, not this demo.
+This scripted demo exercises actual source lookups, pricing, worker processing and simulated delivery. Its report identifies `model_mode: "scripted"`. The [live evidence](index.html) is live model output, not this demo.
 
 ### Staff source maintenance
 
@@ -204,7 +204,7 @@ This also checks formatting, lint, types, docstrings, dependency boundaries, com
 
 ## Known limitations
 
-- Live model evidence is small. Historical pre-contract runs (before the facts/JSON contract) covered five single-turn development questions on cloud models (GLM-4.7 Flash 13/15, Gemma 4 11/15, before the four probe cases were added) and five recorded two-turn conversations on a local model. The current revision (32b5281, cloud GLM-4.7 Flash) recorded nine turns in five conversations, listed in [live evidence](docs/evidence/conversations.html): 1 correct, 3 appropriate refusals, 2 safe fallbacks, 1 handoff, 1 turn with no reply after the handoff by design, and 1 execution failure (68.8 s, over the 60 s deadline; reply not delivered). Independently written paraphrases remain required.
+- Live model evidence is small. Historical pre-contract runs (before the facts/JSON contract) covered five single-turn development questions on cloud models (GLM-4.7 Flash 13/15, Gemma 4 11/15, before the four probe cases were added) and five recorded two-turn conversations on a local model. The current revision (32b5281, cloud GLM-4.7 Flash) recorded nine turns in five conversations, listed in [live evidence](index.html): 1 correct, 3 appropriate refusals, 2 safe fallbacks, 1 handoff, 1 turn with no reply after the handoff by design, and 1 execution failure (68.8 s, over the 60 s deadline; reply not delivered). Independently written paraphrases remain required.
 - Output checks catch known kinds of error, not general falsehood. They bind numbers to units (so "7 anos" fails where the manual says "7 dias"), prices to products, and addresses and contacts to evidence; they reject a fixed list of absolute and praise phrases ("vitalícia", "qualquer valor", "bem avaliado") and opening on closed days unless the evidence says so. Other unsupported descriptive claims, wrong conditions phrased in new words, and omitted eligibility rules can still pass, so an accepted reply is not proof of correctness. Catalog searches return five results per page; the app appends a notice when more exist, but reply completeness is otherwise unchecked. Policy claims are still phrase-checked, not structured policy rules.
 - Policy retrieval is lexical and hand-tuned; common phrasings were added, but unseen inflections and synonyms can still miss. See [ADR-0005](docs/adr/0005-retrieval-refactoring.md).
 - In the historical pre-contract local recording (three-request budget), a small model hit the turn budget and received the fixed safe-failure reply in 1 of 10 turns.
@@ -245,4 +245,4 @@ Those reviews caught concrete mistakes before acceptance: a proposed newline spl
 - [ADR-0004: Explicit model selection and provider compatibility](docs/adr/0004-free-model-and-provider-fallbacks.md)
 - [ADR-0005: Retrieval refactoring (accepted)](docs/adr/0005-retrieval-refactoring.md)
 
-[Requirements](docs/requirements.md) · [Interface contracts](docs/interfaces.md) · [Security review](docs/security-review.md) · [Live evidence](docs/evidence/conversations.html) · [Historical interactions](docs/interactions.md)
+[Requirements](docs/requirements.md) · [Interface contracts](docs/interfaces.md) · [Security review](docs/security-review.md) · [Live evidence](index.html) · [Historical interactions](docs/interactions.md)
