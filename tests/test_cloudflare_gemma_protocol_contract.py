@@ -230,6 +230,26 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         self.assertEqual((result["content"], len(sent)), (json.dumps({"outcome": "answer", "text": "Ok.", "reason": None}), 2))
         http.close()
 
+    def test_cloudflare_retries_once_after_transient_503_or_429(self):
+        ok = httpx.Response(200, json={"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call(json.dumps({"outcome": "answer", "text": "Ok.", "reason": None}))]}, "finish_reason": "tool_calls"}]})
+        for status in (503, 429):
+            with self.subTest(status=status):
+                responses, sent = iter([httpx.Response(status), ok]), []
+                http = httpx.Client(transport=httpx.MockTransport(lambda request: sent.append(request) or next(responses)))
+                model = CloudflareClient(account_id="acct", api_key="cf-key", model=GEMMA, client=http)
+                result = model([{"role": "user", "content": "oi"}], copy.deepcopy(TOOL_SCHEMAS))
+                self.assertEqual((result["content"], len(sent)), (json.dumps({"outcome": "answer", "text": "Ok.", "reason": None}), 2))
+                http.close()
+
+    def test_cloudflare_stops_after_one_transient_retry(self):
+        sent = []
+        http = httpx.Client(transport=httpx.MockTransport(lambda request: sent.append(request) or httpx.Response(503)))
+        model = CloudflareClient(account_id="acct", api_key="cf-key", model=GEMMA, client=http)
+        with self.assertRaises(httpx.HTTPStatusError):
+            model([{"role": "user", "content": "oi"}], copy.deepcopy(TOOL_SCHEMAS))
+        self.assertEqual(len(sent), 2)
+        http.close()
+
     def test_cloudflare_does_not_retry_other_400_codes(self):
         sent = []
         http = httpx.Client(transport=httpx.MockTransport(lambda request: sent.append(request) or httpx.Response(400, json={"errors": [{"code": 1000, "message": "Bad"}], "success": False})))
