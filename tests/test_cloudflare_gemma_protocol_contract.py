@@ -164,7 +164,7 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         model, http = _client_for(body)
         search = Mock(return_value={"outcome": "found", "data": [], "sources": [], "page": None})
         result = run_turn("Pode procurar?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={"search_catalog": search})
-        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 3, 0))
+        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 4, 0))
         search.assert_not_called()
         http.close()
 
@@ -186,8 +186,8 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         model, http = _client_for(body)
         with patch("emporio.agent_turn.output_supported", wraps=output_supported) as supported:
             result = run_turn("oi", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
-        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 3, 0))
-        self.assertEqual(supported.call_count, 3)
+        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 4, 0))
+        self.assertEqual(supported.call_count, 4)
         http.close()
 
     def test_untrusted_control_claim_still_runs_the_existing_output_guard(self):
@@ -197,7 +197,7 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         model, http = _client_for(body)
         with patch("emporio.agent_turn.output_supported", wraps=output_supported) as supported:
             result = run_turn("qual preço?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
-        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 3, 0))
+        self.assertEqual((result["text"], result["model_requests"], result["tool_executions"]), (FAILURE_TEXT, 4, 0))
         supported.assert_called_with(claim, "answer", [], [])
         http.close()
 
@@ -214,5 +214,5 @@ class CloudflareGemmaProtocolContractTests(SimpleTestCase):
         body = {"choices": [{"message": {"role": "assistant", "tool_calls": [_tool_call(json.dumps(invalid, ensure_ascii=False))]}, "finish_reason": "tool_calls"}], "model": GEMMA}
         model, http = _client_for(body)
         result = run_turn("Vocês vendem pizza?", sender="5567998123456", model_client=model, snapshot_version="bundle-v1", handlers={})
-        self.assertEqual((result["model_requests"], result["text"]), (3, FAILURE_TEXT))
+        self.assertEqual((result["model_requests"], result["text"]), (4, FAILURE_TEXT))
         http.close()

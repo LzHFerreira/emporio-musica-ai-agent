@@ -32,3 +32,16 @@ class TerminalProtocolContractTests(TestCase):
     def test_valid_json_retry_recovers_after_prose(self):
         result = run_with([PROSE, ANSWER])
         self.assertEqual((result["text"], result["model_requests"]), ("Olá! Em que posso ajudar?", 2))
+
+    def test_rejected_final_after_two_tool_rounds_gets_one_repair(self):
+        search = {"tool_calls": [{"id": "c1", "type": "function", "function": {"name": "search_catalog", "arguments": '{"query": "violão", "mode": "resolve"}'}}]}
+        policy = {"tool_calls": [{"id": "c2", "type": "function", "function": {"name": "lookup_public_policy", "arguments": '{"query": "horário"}'}}]}
+        result = run_with([search, policy, PROSE, ANSWER])
+        self.assertEqual((result["outcome"], result["model_requests"]), ("answer", 4))
+        self.assertIn("Olá! Em que posso ajudar?", result["text"])
+
+    def test_tool_calls_forever_stops_at_four_model_requests(self):
+        call = {"tool_calls": [{"id": "c", "type": "function", "function": {"name": "lookup_public_policy", "arguments": '{"query": "horário"}'}}]}
+        result = run_with([call] * 5)
+        self.assertLessEqual(result["model_requests"], 4)
+        self.assertEqual((set(result), result["text"]), (ENVELOPE, FAILURE_TEXT))
